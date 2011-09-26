@@ -4,8 +4,6 @@
 #include <QDebug>
 #include <QHostAddress>
 
-#include "rtsp.h"
-#include "jabber.h"
 #include "logitechcameras.h"
 
 
@@ -72,6 +70,8 @@ void MainWindow::UPnPEvent(Upnp_Discovery *event)
             Logitech700eCamera *camera = new Logitech700eCamera( QHostAddress( (const sockaddr * )&event->DestAddr ) );
             cameras.insert( event->DeviceId, QSharedPointer<Camera>(camera) );
             ui->cameraList->insertItem(0, QString( event->DeviceId ) );
+            if ( 1 == ui->cameraList->count() )
+                ui->cameraList->setCurrentIndex( 0 );
         }
     }
 }

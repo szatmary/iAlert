@@ -2,9 +2,9 @@
 #define LOGITECHCAMERAS_H
 
 #include "camera.h"
-#include "jabber.h"
 
-#include <QTimer>
+#include <QUuid>
+#include <QThread>
 #include <QStringList>
 #include <QHostAddress>
 #include <QSharedPointer>
@@ -17,6 +17,7 @@
 #include <gloox/bytestreamdatahandler.h>
 #include <gloox/siprofilefthandler.h>
 #include <gloox/siprofileft.h>
+#include <gloox/presencehandler.h>
 
 class LogitechHandler
 {
@@ -117,49 +118,5 @@ private:
     QHash< QString, QSharedPointer<LogitechBytestreamDataHandler> > transfers;
     QStringList pendingTransfers;
 };
-
-// XMPP stuff
-//namespace gloox
-//{
-//    class Logitechhandler
-//    {
-//\        void RecordingSearchResult(const Tag *tag);
-//    };
-
-
-//    class LogitechStanzaExtension : public StanzaExtension
-//    {
-//    public:
-//        LogitechStanzaExtension();
-//        LogitechStanzaExtension(const Tag *tag);
-//        virtual ~LogitechStanzaExtension();
-
-//        virtual StanzaExtension *newInstance (const Tag *tag) const;
-//        virtual Tag *tag () const;
-//        virtual StanzaExtension *clone () const;
-//    private:
-//        Tag *m_tag;
-//    };
-
-//    class LogitechStanzaExtensionRecordingSearch : public LogitechStanzaExtension
-//    {
-//    public:
-
-//        LogitechStanzaExtensionRecordingSearch(const Tag *tag)
-//        : LogitechStanzaExtension(tag)
-//        {}
-
-//        virtual StanzaExtension *newInstance (const Tag *tag) const
-//        {
-//            return new LogitechStanzaExtensionRecordingSearch(tag);
-//        }
-
-//        virtual const std::string & filterString () const
-//        {
-//            static std::string filter = "urn:logitech-com:logitech-alert:device:media:recording:search";
-//            return filter;
-//        }
-//    };
-//}
 
 #endif // LOGITECHCAMERAS_H

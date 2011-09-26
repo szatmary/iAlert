@@ -1,10 +1,24 @@
 #include "logitechcameras.h"
 
+#include <QDir>
 #include <QFileInfo>
 #include <QSocketNotifier>
 #include <QDesktopServices>
 
 #include <gloox/connectiontcpclient.h>
+
+
+QString recoringPath(QString fileName)
+{
+    QDir dir( QDesktopServices::storageLocation( QDesktopServices::MoviesLocation ) + "/iAlert" );
+    if ( ! dir.exists() )
+    {
+        dir.mkpath( dir.path() );
+    }
+
+    return dir.filePath( fileName );
+}
+
 
 #define LogitechRecordingSearchResultExtType (gloox::ExtUser + 1)
 LogitechRecordingSearchResult::LogitechRecordingSearchResult(LogitechHandler *handler)
@@ -191,7 +205,7 @@ void LogitechBytestreamDataHandler::handleBytestreamError (gloox::Bytestream *bs
     qDebug() << __FUNCTION__;
     file.close();
     emit downloadComplete( QString(sid.c_str()), false );
-    // error, juet let the file delete itself
+    // error, just let the file delete itself
 }
 
 void LogitechBytestreamDataHandler::handleBytestreamOpen (gloox::Bytestream *bs)
@@ -208,7 +222,7 @@ void LogitechBytestreamDataHandler::handleBytestreamClose (gloox::Bytestream *bs
         return;
     }
 
-    QString newName = QDesktopServices::storageLocation( QDesktopServices::MoviesLocation ) + QString("/") + QString( name.c_str() );
+    QString newName = recoringPath( name.c_str() );
 
     // TODO set file metadata
     file.setAutoRemove( false );
@@ -352,14 +366,9 @@ void Logitech700eCamera::handlePresence( const gloox::Presence &presence )
     qDebug() << "handlePresence" << presence.subtype();
 }
 
-//void Logitech700eCamera::handleLogitechTag(const gloox::Tag *tag)
-//{
-//    qDebug() << __FUNCTION__ << tag->xml().c_str();
-//}
-
 void Logitech700eCamera::handleFTRequest (const gloox::JID &from, const gloox::JID &to, const std::string &sid, const std::string &name, long size, const std::string &hash, const std::string &date, const std::string &mimetype, const std::string &desc, int stypes)
 {
-    QString fileName = QDesktopServices::storageLocation( QDesktopServices::MoviesLocation ) + QString("/") + QString( name.c_str() );
+    QString fileName = recoringPath( name.c_str() );
     if( QFileInfo( fileName ).exists() )
     { // we already have this file downloaded
         fileTransfer->declineFT( from, sid, gloox::SIManager::RequestRejected );

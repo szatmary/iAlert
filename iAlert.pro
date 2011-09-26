@@ -16,17 +16,18 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    rtsp.cpp \
     camera.cpp \
     logitechcameras.cpp
 
 HEADERS  += mainwindow.h \
-    rtsp.h \
     camera.h \
     logitechcameras.h
+
 FORMS    += mainwindow.ui
 
 LIBS += -lupnp -lgloox -lavcodec -lavformat
+
+
 
 
 
