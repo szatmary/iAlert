@@ -25,7 +25,7 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui
 
-LIBS += -lupnp -lgloox -lavcodec -lavformat
+LIBS += -lupnp -lgloox
 
 
 
