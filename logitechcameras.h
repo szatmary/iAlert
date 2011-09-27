@@ -13,11 +13,12 @@
 #include <QCryptographicHash>
 
 #include <gloox/client.h>
-#include <gloox/connectionlistener.h>
-#include <gloox/bytestreamdatahandler.h>
-#include <gloox/siprofilefthandler.h>
 #include <gloox/siprofileft.h>
+#include <gloox/adhochandler.h>
 #include <gloox/presencehandler.h>
+#include <gloox/connectionlistener.h>
+#include <gloox/siprofilefthandler.h>
+#include <gloox/bytestreamdatahandler.h>
 
 class LogitechHandler
 {
@@ -44,7 +45,7 @@ class LogitechBytestreamDataHandler : public QThread, gloox::BytestreamDataHandl
 {
 Q_OBJECT
 public:
-    LogitechBytestreamDataHandler(const gloox::JID &from, const gloox::JID &to, const std::string &sid, const std::string &name, long size, const std::string &hash, const std::string &date, const std::string &mimetype, const std::string &desc, int stypes);
+    LogitechBytestreamDataHandler(QString cameraName, const gloox::JID &from, const gloox::JID &to, const std::string &sid, const std::string &name, long size, const std::string &hash, const std::string &date, const std::string &mimetype, const std::string &desc, int stypes);
     void beginTransfer(gloox::Bytestream *bs);
 
     virtual void handleBytestreamData (gloox::Bytestream *bs, const std::string &data);
@@ -56,10 +57,12 @@ signals:
 protected:
     virtual void run();
 private:
+    QString cameraName;
     QTemporaryFile file;
     QCryptographicHash fileHash;
 
     gloox::Bytestream *bs;
+
     const gloox::JID from;
     const gloox::JID to;
     const std::string sid;
@@ -73,7 +76,7 @@ private:
 
 };
 
-class Logitech700eCamera : public Camera, LogitechHandler, gloox::ConnectionListener, gloox::PresenceHandler, gloox::SIProfileFTHandler
+class Logitech700eCamera : public Camera, LogitechHandler, gloox::ConnectionListener, gloox::PresenceHandler, gloox::SIProfileFTHandler, gloox::AdhocHandler
 {
 Q_OBJECT
 public:
@@ -95,8 +98,14 @@ private:
     virtual void handleFTBytestream (gloox::Bytestream *bs);
     virtual const std::string handleOOBRequestResult (const gloox::JID &from, const gloox::JID &to, const std::string &sid);
 
+    virtual void handleAdhocSupport (const gloox::JID &remote, bool support);
+    virtual void handleAdhocCommands (const gloox::JID &remote, const gloox::StringMap &commands);
+    virtual void handleAdhocError (const gloox::JID &remote, const gloox::Error *error);
+    virtual void handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command);
+
     virtual void handleNewRecording(QString id);
     void downloadFile(QString id);
+    void basicGet();
 signals:
     void connected(bool);
     void disconnected();
@@ -106,15 +115,17 @@ private slots:
     void readyRead();
     void Logitech700eCameraImpl(QString username, QString password);
 private:
-    QUuid           uuid;
+    QUuid           uuid; // THIS should be static!
     QThread         thread;
     QHostAddress    hostAddress;
-    QString         macAddress;
+    QString         cameraName;
 
     QSharedPointer<gloox::Client>      client;
-    QSharedPointer<gloox::SIProfileFT> fileTransfer;
+
     QSharedPointer<QSocketNotifier>    socketNotifier;
-    QList< QSharedPointer<gloox::StanzaExtension> > extensions;
+    gloox::Adhoc *adHoc;
+    gloox::SIProfileFT *fileTransfer;
+
     QHash< QString, QSharedPointer<LogitechBytestreamDataHandler> > transfers;
     QStringList pendingTransfers;
 };
