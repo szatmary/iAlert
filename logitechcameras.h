@@ -15,10 +15,12 @@
 #include <gloox/client.h>
 #include <gloox/siprofileft.h>
 #include <gloox/adhochandler.h>
+#include <gloox/messagehandler.h>
 #include <gloox/presencehandler.h>
 #include <gloox/connectionlistener.h>
 #include <gloox/siprofilefthandler.h>
 #include <gloox/bytestreamdatahandler.h>
+#include <gloox/message.h>
 
 class LogitechHandler
 {
@@ -76,7 +78,7 @@ private:
 
 };
 
-class Logitech700eCamera : public Camera, LogitechHandler, gloox::ConnectionListener, gloox::PresenceHandler, gloox::SIProfileFTHandler, gloox::AdhocHandler
+class Logitech700eCamera : public Camera, LogitechHandler, gloox::ConnectionListener, gloox::PresenceHandler, gloox::SIProfileFTHandler, gloox::AdhocHandler, gloox::MessageHandler
 {
 Q_OBJECT
 public:
@@ -103,9 +105,13 @@ private:
     virtual void handleAdhocError (const gloox::JID &remote, const gloox::Error *error);
     virtual void handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command);
 
+    // For pubsub
+    virtual void handleMessage (const gloox::Message &msg, gloox::MessageSession *session = 0);
+
     virtual void handleNewRecording(QString id);
     void downloadFile(QString id);
     void basicGet();
+    QString cameraName() { return QString(instanceName + " (" + instanceId + ")"); }
 signals:
     void connected(bool);
     void disconnected();
@@ -118,7 +124,19 @@ private:
     QUuid           uuid; // THIS should be static!
     QThread         thread;
     QHostAddress    hostAddress;
-    QString         cameraName;
+
+
+    // camera info
+    QString instanceId;
+    QString instanceName;
+    QString instanceType;
+    QString softwareVersion;
+    QString softwareVersionReleaseDate;
+    QString softwareInstallDate;
+    QString operatingSystemFullName;
+    QString operatingSystemVersion;
+    QString systemUpTime;
+
 
     QSharedPointer<gloox::Client>      client;
 

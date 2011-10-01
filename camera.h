@@ -24,6 +24,8 @@ public:
     virtual int features() = 0;
     virtual QUrl liveStream() = 0;
     virtual QString recordings() = 0;
+
+    static void discoverCameras();
 signals:
     void newRecording();
 };

@@ -17,15 +17,21 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     camera.cpp \
-    logitechcameras.cpp
+    logitechcameras.cpp \
+    usbcamera.cpp
 
 HEADERS  += mainwindow.h \
     camera.h \
-    logitechcameras.h
+    logitechcameras.h \
+    usbcamera.h
 
 FORMS    += mainwindow.ui
 
 LIBS += -lupnp -lgloox
+
+
+
+
 
 
 

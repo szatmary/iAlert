@@ -6,25 +6,22 @@
 #include <QSocketNotifier>
 #include <QDesktopServices>
 
-#include <gloox/connectiontcpclient.h>
 #include <gloox/adhoc.h>
-
+#include <gloox/pubsub.h>
+#include <gloox/pubsubevent.h>
+#include <gloox/connectiontcpclient.h>
 
 #include <utime.h>
 
 QString recoringPath(QString camera, QDateTime time, QString fileName)
 {
-
     QDir dir( QDesktopServices::storageLocation( QDesktopServices::MoviesLocation ) + "/iAlert/" + camera + "/"  + time.toString("yyyy") + "/" + time.toString("MM") + "/" + time.toString("dd") );
 
     if ( ! dir.exists() )
-    {
         dir.mkpath( dir.path() );
-    }
 
     return dir.filePath( fileName );
 }
-
 ////////////////////////////////////////////////////////////////////////////
 #define LogitechRecordingSearchResultExtType (gloox::ExtUser + 1)
 LogitechRecordingSearchResult::LogitechRecordingSearchResult(LogitechHandler *handler)
@@ -36,6 +33,7 @@ LogitechRecordingSearchResult::LogitechRecordingSearchResult(const gloox::Tag *t
 : StanzaExtension(LogitechRecordingSearchResultExtType)
 , m_handler(handler)
 {
+    qDebug() << __FUNCTION__;
     if ( ! tag )
         return;
 
@@ -44,13 +42,16 @@ LogitechRecordingSearchResult::LogitechRecordingSearchResult(const gloox::Tag *t
     gloox::Tag *count = set->findChild("count");
 
     gloox::Tag *results = tag->findChild("Results");
-    const gloox::TagList children = results->children();
-    qDebug() << "Received" << children.size() << "of" << count->cdata().c_str();
-    for( gloox::TagList::const_iterator i = children.begin() ; i != children.end() ; ++i )
+    if( results )
     {
-        // TODO sanitycheck Name is 'Item'
-//        qDebug() << "Id:" << (*i)->findAttribute("Id").c_str() << "StartTime:" << (*i)->findAttribute("StartTime").c_str() << "Duration:" << (*i)->findAttribute("Duration").c_str();
-        handler->handleNewRecording( QString( (*i)->findAttribute("Id").c_str() ) );
+        const gloox::TagList children = results->children();
+        qDebug() << "Received" << children.size() << "of" << count->cdata().c_str();
+        for( gloox::TagList::const_iterator i = children.begin() ; i != children.end() ; ++i )
+        {
+            // TODO sanitycheck Name is 'Item'
+    //        qDebug() << "Id:" << (*i)->findAttribute("Id").c_str() << "StartTime:" << (*i)->findAttribute("StartTime").c_str() << "Duration:" << (*i)->findAttribute("Duration").c_str();
+            handler->handleNewRecording( QString( (*i)->findAttribute("Id").c_str() ) );
+        }
     }
 }
 
@@ -83,16 +84,17 @@ gloox::StanzaExtension *LogitechRecordingSearchResult::clone () const
 ////////////////////////////////////////////////////////////////////////////
 class LogitechRecordingSearchIQ : public gloox::IQ
 {
+private:
+    QString instanceId;
 public:
-    LogitechRecordingSearchIQ( gloox::JID &to, const std::string id = gloox::EmptyString)
-        : gloox::IQ(Get,to,id)
+    LogitechRecordingSearchIQ(QString instanceId, gloox::JID &to, const std::string id = gloox::EmptyString)
+        : gloox::IQ(Get,to,id), instanceId( instanceId )
     {}
 
     gloox::Tag *tag() const
     {
         gloox::Tag *t = gloox::IQ::tag();
 
-        std::string remoteMac = "00-12-AB-1B-13-63";
 //        std::string MinInclusiveStr = "2011-09-14T14:38:01.990273-04:00";
 
         gloox::Tag *Query = new gloox::Tag(t, "Query");
@@ -112,7 +114,7 @@ public:
         gloox::Tag *Criteria = new gloox::Tag(Query,"Criteria");
         gloox::Tag *Field4 = new gloox::Tag(Criteria,"Field", "name", "DeviceId");
         Field4->addAttribute("type","list-multi");
-        gloox::Tag *Value = new gloox::Tag(Field4,"Value", remoteMac);
+        gloox::Tag *Value = new gloox::Tag(Field4,"Value", instanceId.toUtf8().constData() );
 
         gloox::Tag *Field5 = new gloox::Tag(Criteria,"Field", "name", "StartTime");
         Field5->addAttribute("type","dateTime");
@@ -120,7 +122,7 @@ public:
         gloox::Tag *Sort = new gloox::Tag(Field5, "Sort");
         Sort->addAttribute("allowed","1");
         Sort->addAttribute("order","1");
-        Sort->addAttribute("direction","ASC"); // DESC
+        Sort->addAttribute("direction","DESC"); // ANC/DESC
 
 //        Tag *MinInclusive = new Tag(Field5,"MinInclusive", MinInclusiveStr);
         gloox::Tag *MinInclusive = new gloox::Tag(Field5,"MinInclusive");
@@ -142,6 +144,8 @@ public:
 
     gloox::Tag *tag() const
     {
+        qDebug() << __FUNCTION__;
+
         gloox::Tag *t = gloox::IQ::tag();
 
         gloox::Tag *Transfer = new gloox::Tag(t, "Transfer");
@@ -254,7 +258,6 @@ void LogitechBytestreamDataHandler::handleBytestreamClose (gloox::Bytestream *bs
 ////////////////////////////////////////////////////////////////////////////
 Logitech700eCamera::Logitech700eCamera(QHostAddress addr, QString username, QString password)
 : hostAddress(addr)
-, cameraName( "Unknown Camera")
 {
     uuid = QUuid::createUuid(); // TODO this should be stored and reused
     moveToThread( &thread );
@@ -280,6 +283,7 @@ void Logitech700eCamera::Logitech700eCameraImpl(QString username, QString passwo
 
     client->registerConnectionListener( this );
     client->registerPresenceHandler( this );
+    client->registerMessageHandler( this );
 
 
     LogitechRecordingSearchResult *recordingSearch = new LogitechRecordingSearchResult( this );
@@ -322,6 +326,7 @@ QString Logitech700eCamera::recordings()
 
 void Logitech700eCamera::handleNewRecording(QString id)
 {
+    qDebug() << __FUNCTION__;
     pendingTransfers.append( id );
     if ( 1 == pendingTransfers.size() )
         downloadFile(id);
@@ -403,13 +408,17 @@ void Logitech700eCamera::handlePresence( const gloox::Presence &presence )
 
 void Logitech700eCamera::handleFTRequest (const gloox::JID &from, const gloox::JID &to, const std::string &sid, const std::string &name, long size, const std::string &hash, const std::string &date, const std::string &mimetype, const std::string &desc, int stypes)
 {
-    QString fileName = recoringPath( cameraName, QDateTime::fromString(date.c_str(), Qt::ISODate), name.c_str() );
+    qDebug() << __FUNCTION__;
+    QString fileName = recoringPath( cameraName(), QDateTime::fromString(date.c_str(), Qt::ISODate), name.c_str() );
 
     if( QFileInfo( fileName ).exists() )
     { // we already have this file downloaded
-        fileTransfer->declineFT( from, sid, gloox::SIManager::RequestRejected );
+
+        //fileTransfer->declineFT( from, sid, gloox::SIManager::RequestRejected );
         // Change this!
         // I think declineFT removes teh file from teh camera
+        // WOW! this doesnt delete the files, But they become unavailable, but continue to take up space.
+        // DO NOT DO THIS!
 
         qDebug()  << "File exists:" << fileName << date.c_str();
 
@@ -418,7 +427,7 @@ void Logitech700eCamera::handleFTRequest (const gloox::JID &from, const gloox::J
             downloadFile( pendingTransfers.first() );
     } else {
         qDebug()  << "Downloading:" << fileName;
-        LogitechBytestreamDataHandler *dataHandler = new LogitechBytestreamDataHandler(cameraName, from, to, sid, name, size, hash, date, mimetype, desc, stypes);
+        LogitechBytestreamDataHandler *dataHandler = new LogitechBytestreamDataHandler( cameraName(), from, to, sid, name, size, hash, date, mimetype, desc, stypes);
         connect(dataHandler,SIGNAL(downloadComplete(QString,bool)), this, SLOT(downloadComplete(QString,bool)));
         transfers.insert( QString(sid.c_str()), QSharedPointer<LogitechBytestreamDataHandler>(dataHandler) );
         fileTransfer->acceptFT( from, sid );
@@ -452,33 +461,53 @@ void Logitech700eCamera::handleAdhocSupport (const gloox::JID &remote, bool supp
 {
     qDebug() << __FUNCTION__;
 }
+
 void Logitech700eCamera::handleAdhocCommands (const gloox::JID &remote, const gloox::StringMap &commands)
 {
     qDebug() << __FUNCTION__;
 }
+
 void Logitech700eCamera::handleAdhocError (const gloox::JID &remote, const gloox::Error *error)
 {
     qDebug() << __FUNCTION__;
 }
+
 void Logitech700eCamera::handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command)
 {
     qDebug() << __FUNCTION__;
     if( "urn:logitech-com:logitech-alert:nvr:basic:get" == command.node() )
     {
-        QString instanceId( command.form()->field("InstanceId")->value().c_str() );
-        QString instanceName( command.form()->field("InstanceName")->value().c_str() );
-        QString instanceType( command.form()->field("InstanceType")->value().c_str() );
-        QString softwareVersion( command.form()->field("SoftwareVersion")->value().c_str() );
-        QString softwareVersionReleaseDate( command.form()->field("SoftwareVersionReleaseDate")->value().c_str() );
-        QString softwareInstallDate( command.form()->field("SoftwareInstallDate")->value().c_str() );
-        QString operatingSystemFullName( command.form()->field("OperatingSystemFullName")->value().c_str() );
-        QString operatingSystemVersion( command.form()->field("OperatingSystemVersion")->value().c_str() );
-        QString systemUpTime( command.form()->field("SystemUpTime")->value().c_str() );
-        cameraName = instanceName + " (" + instanceId + ")";
+        instanceId = QString( command.form()->field("InstanceId")->value().c_str() );
+        instanceName = QString( command.form()->field("InstanceName")->value().c_str() );
+        instanceType = QString( command.form()->field("InstanceType")->value().c_str() );
+        softwareVersion = QString( command.form()->field("SoftwareVersion")->value().c_str() );
+        softwareVersionReleaseDate = QString( command.form()->field("SoftwareVersionReleaseDate")->value().c_str() );
+        softwareInstallDate = QString( command.form()->field("SoftwareInstallDate")->value().c_str() );
+        operatingSystemFullName = QString( command.form()->field("OperatingSystemFullName")->value().c_str() );
+        operatingSystemVersion = QString( command.form()->field("OperatingSystemVersion")->value().c_str() );
+        systemUpTime = QString( command.form()->field("SystemUpTime")->value().c_str() );
+
 
         QString serverAddr("server@127.0.0.1/NvrCore");
         gloox::JID serverJid( serverAddr.toUtf8().constData() );
-        LogitechRecordingSearchIQ iq(serverJid, client->getID() );
+        LogitechRecordingSearchIQ iq(instanceId, serverJid, client->getID() );
         client->send( iq );
     }
 }
+
+void Logitech700eCamera::handleMessage (const gloox::Message &msg, gloox::MessageSession *session)
+{
+    const gloox::PubSub::Event *pse = msg.findExtension<gloox::PubSub::Event>( gloox::ExtPubSubEvent );
+     if( pse )
+     {
+         qDebug() << "PubSub message";
+         // use the Event
+     }
+     else
+     {
+         qDebug() << "Non PubSub message";
+       // no Event
+     }
+}
+
+
