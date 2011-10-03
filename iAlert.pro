@@ -18,16 +18,33 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     camera.cpp \
     logitechcameras.cpp \
-    usbcamera.cpp
+    usbcamera.cpp \
+    qupnp.cpp \
+    qxmpp.cpp
 
 HEADERS  += mainwindow.h \
     camera.h \
     logitechcameras.h \
-    usbcamera.h
+    usbcamera.h \
+    qupnp.h \
+    qxmpp.h
 
 FORMS    += mainwindow.ui
 
 LIBS += -lupnp -lgloox
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

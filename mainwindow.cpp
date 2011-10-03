@@ -7,24 +7,6 @@
 #include "logitechcameras.h"
 
 
-// In Seconds
-#define SEARCH_TIME 30
-
-int UpnpCallback(Upnp_EventType eventType, void* event, MainWindow *cookie )
-{
-    switch(eventType)
-    {
-    case UPNP_DISCOVERY_SEARCH_RESULT:
-        cookie->UPnPEvent( (Upnp_Discovery*)event );
-        break;
-    default:
-        cookie->UPnPEvent( eventType );
-        break;
-    }
-
-    return 1;
-}
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -36,8 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
     videoLayout->addWidget( videoPlayer );
     videoWindow.setLayout( videoLayout );
 
-    UpnpInit ( 0, 0 );
-    UpnpRegisterClient ( (Upnp_FunPtr)UpnpCallback, 0, &UpnpHandle );
+    connect(&upnp,SIGNAL(discovery(QUpnpDiscovery)),this,SLOT(upnpDiscovery(QUpnpDiscovery)));
     refreshCameraList();
 }
 
@@ -52,36 +33,27 @@ void MainWindow::closeEvent(QCloseEvent *event)
     qApp->quit();
 }
 
-void MainWindow::UPnPEvent(Upnp_EventType eventType)
-{
-    switch(eventType)
-    {
-        case UPNP_DISCOVERY_SEARCH_TIMEOUT:
-        ui->cameraRefresh->setEnabled( true );
-    }
-}
-
-void MainWindow::UPnPEvent(Upnp_Discovery *event)
-{
-    if ( QString("urn:upnp-logitech-com:service:SecurityDeviceControl:1") == QString(event->ServiceType) )
-    {
-        if( ! cameras.contains( QString(event->DeviceId) )  )
-        {
-            Logitech700eCamera *camera = new Logitech700eCamera( QHostAddress( (const sockaddr * )&event->DestAddr ) );
-            cameras.insert( event->DeviceId, QSharedPointer<Camera>(camera) );
-            ui->cameraList->insertItem(0, QString( event->DeviceId ) );
-            if ( 1 == ui->cameraList->count() )
-                ui->cameraList->setCurrentIndex( 0 );
-        }
-    }
-}
-
 void MainWindow::refreshCameraList()
 {
     ui->cameraList->clear();
     cameras.clear();
-    UpnpSearchAsync( UpnpHandle, SEARCH_TIME, "ssdp:all", this );
+    upnp.discover();
     ui->cameraRefresh->setEnabled( false );
+}
+
+void MainWindow::upnpDiscovery(QUpnpDiscovery disco)
+{
+    if ( QString("urn:upnp-logitech-com:service:SecurityDeviceControl:1") == disco.m_serviceType )
+    {
+        if( ! cameras.contains( disco.m_deviceId )  )
+        {
+            Logitech700eCamera *camera = new Logitech700eCamera( disco.m_destAddr );
+            cameras.insert( disco.m_deviceId, QSharedPointer<Camera>(camera) );
+            ui->cameraList->insertItem(0, disco.m_deviceId );
+            if ( 1 == ui->cameraList->count() )
+                ui->cameraList->setCurrentIndex( 0 );
+        }
+    }
 }
 
 void MainWindow::on_cameraRefresh_clicked()
@@ -94,7 +66,6 @@ void MainWindow::on_cameraList_currentIndexChanged(const QString &arg1)
     CameraRoster::iterator i = cameras.find( arg1 );
     if( cameras.end() != i )
     {
-        qDebug() << "Playing stream" << i.value()->liveStream();
         videoPlayer->play( Phonon::MediaSource( i.value()->liveStream() ) );
         videoWindow.show();
     }

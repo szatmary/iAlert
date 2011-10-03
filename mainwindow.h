@@ -7,19 +7,15 @@
 #include <QListWidgetItem>
 #include <phonon/videoplayer.h>
 
-#include <upnp/upnp.h>
 #include <gloox/gloox.h>
 
 #include "camera.h"
+#include "qupnp.h"
 
 namespace Ui
 {
     class MainWindow;
 }
-
-// TODO move the upnp code it its own class
-class MainWindow;
-int UpnpCallback(Upnp_EventType eventType, void *event, MainWindow *cookie );
 
 class MainWindow : public QMainWindow
 {
@@ -32,12 +28,14 @@ public:
 
 public slots:
     void refreshCameraList();
+    void upnpDiscovery(QUpnpDiscovery);
 private slots:
     void on_cameraRefresh_clicked();
     void on_cameraList_currentIndexChanged(const QString &arg1);
 
 private:
     void closeEvent(QCloseEvent *event);
+    QUpnp upnp;
 
     Ui::MainWindow *ui;
     CameraRoster    cameras;
@@ -46,12 +44,6 @@ private:
     QWidget              videoWindow;
     QVBoxLayout         *videoLayout;
     Phonon::VideoPlayer *videoPlayer;
-
-// Upnp stuff
-    UpnpClient_Handle UpnpHandle;
-    friend int UpnpCallback(Upnp_EventType eventType, void *event, MainWindow *cookie );
-    void UPnPEvent(Upnp_Discovery *event);
-    void UPnPEvent(Upnp_EventType eventType); // gotta catch 'em all!
 };
 
 #endif // MAINWINDOW_H
