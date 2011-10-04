@@ -4,26 +4,6 @@
 #include "qxmpp.h"
 #include "camera.h"
 
-//#include <QUuid>
-//#include <QThread>
-//#include <QStringList>
-//#include <QHostAddress>
-//#include <QSharedPointer>
-//#include <QSocketNotifier>
-//#include <QTemporaryFile>
-//#include <QCryptographicHash>
-
-//#include <gloox/client.h>
-//#include <gloox/siprofileft.h>
-//#include <gloox/adhochandler.h>
-//#include <gloox/messagehandler.h>
-//#include <gloox/presencehandler.h>
-//#include <gloox/connectionlistener.h>
-//#include <gloox/siprofilefthandler.h>
-//#include <gloox/bytestreamdatahandler.h>
-//#include <gloox/message.h>
-
-
 //class LogitechHandler
 //{
 //public:
@@ -80,79 +60,51 @@
 
 //};
 
+
+
 class Logitech700eCamera : public Camera
 {
 Q_OBJECT
 public:
-    Logitech700eCamera(QHostAddress addr, QString username = "admin", QString password = "Logitech");
+    Logitech700eCamera(QString id, QHostAddress addr, QString username = "admin", QString password = "Logitech");
     ~Logitech700eCamera();
     virtual int features();
     QString recordings();
     QUrl liveStream();
 
+    void commandNvrBasicGet();
+    void subscribeRecordingEnded();
+
+    void requestRecordingTransfer(QString);
+
+    virtual QDateTime lastRecordingDateTime() { return m_lastEventDateTime; }
+    virtual QPixmap   lastRecordingSnapshot() { return m_lastEventSnapshot; }
 private:
     QHostAddress m_addr;
-
 private:
-//    virtual void onConnect();
-//    virtual void onDisconnect(gloox::ConnectionError e);
-//    virtual bool onTLSConnect(const gloox::CertInfo& info);
-
-//    virtual void handlePresence(const gloox::Presence &presence );
-
-//    virtual void handleFTRequest (const gloox::JID &from, const gloox::JID &to, const std::string &sid, const std::string &name, long size, const std::string &hash, const std::string &date, const std::string &mimetype, const std::string &desc, int stypes);
-//    virtual void handleFTRequestError (const gloox::IQ &iq, const std::string &sid);
-//    virtual void handleFTBytestream (gloox::Bytestream *bs);
-//    virtual const std::string handleOOBRequestResult (const gloox::JID &from, const gloox::JID &to, const std::string &sid);
-
-//    virtual void handleAdhocSupport (const gloox::JID &remote, bool support);
-//    virtual void handleAdhocCommands (const gloox::JID &remote, const gloox::StringMap &commands);
-//    virtual void handleAdhocError (const gloox::JID &remote, const gloox::Error *error);
-//    virtual void handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command);
-
-//    // For pubsub
-//    virtual void handleMessage (const gloox::Message &msg, gloox::MessageSession *session = 0);
-
-//    virtual void handleNewRecording(QString id);
-//    void downloadFile(QString id);
-//    void basicGet();
-//    QString cameraName() { return QString(instanceName + " (" + instanceId + ")"); }
 signals:
-//    void connected(bool);
-//    void disconnected();
 public slots:
-//    void downloadComplete(QString, bool);
+    void xmppConnected();
+    void xmppDisconnected();
+    void xmppCommandResult(QSharedPointer<gloox::Adhoc::Command>);
+    void xmppPublishEvent(QSharedPointer<gloox::PubSub::Event> event);
 private slots:
-//    void readyRead();
-//    void Logitech700eCameraImpl(QString username, QString password);
 private:
-    QSharedPointer<QXmpp> m_xmppCLient;
-
-//    QUuid           uuid; // THIS should be static!
-//    QThread         thread;
-//    QHostAddress    hostAddress;
-
+    QSharedPointer<QXmpp> m_xmppClient;
 
     // camera info
-    QString instanceId;
-    QString instanceName;
-    QString instanceType;
-    QString softwareVersion;
-    QString softwareVersionReleaseDate;
-    QString softwareInstallDate;
-    QString operatingSystemFullName;
-    QString operatingSystemVersion;
-    QString systemUpTime;
+    QString m_instanceId;
+    QString m_instanceName;
+    QString m_instanceType;
+    QString m_softwareVersion;
+    QString m_softwareVersionReleaseDate;
+    QString m_softwareInstallDate;
+    QString m_operatingSystemFullName;
+    QString m_operatingSystemVersion;
+    QString m_systemUpTime;
 
-
-//    QSharedPointer<gloox::Client>      client;
-
-//    QSharedPointer<QSocketNotifier>    socketNotifier;
-//    gloox::Adhoc *adHoc;
-//    gloox::SIProfileFT *fileTransfer;
-
-//    QHash< QString, QSharedPointer<LogitechBytestreamDataHandler> > transfers;
-//    QStringList pendingTransfers;
+    QDateTime m_lastEventDateTime;
+    QPixmap   m_lastEventSnapshot;
 };
 
 #endif // LOGITECHCAMERAS_H

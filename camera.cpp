@@ -2,5 +2,8 @@
 
 #include <QDebug>
 
-Camera::Camera() {}
+Camera::Camera(QString id, QObject *parent)
+: QObject(parent)
+, m_id(id){}
+
 Camera::~Camera() {}

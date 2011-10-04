@@ -9,7 +9,7 @@
 #    QMAKE_MAC_SDK = /Developer/SDKs/MacOSX10.6.sdk
 #}
 
-QT       += core gui network phonon
+QT       += core gui network phonon sql
 
 TARGET = iAlert
 TEMPLATE = app
@@ -18,20 +18,29 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     camera.cpp \
     logitechcameras.cpp \
-    usbcamera.cpp \
     qupnp.cpp \
-    qxmpp.cpp
+    qxmpp.cpp \
+    videowidget.cpp \
+    registry.cpp
 
 HEADERS  += mainwindow.h \
     camera.h \
     logitechcameras.h \
-    usbcamera.h \
     qupnp.h \
-    qxmpp.h
+    qxmpp.h \
+    videowidget.h \
+    registry.h
+
 
 FORMS    += mainwindow.ui
 
 LIBS += -lupnp -lgloox
+
+
+
+
+
+
 
 
 

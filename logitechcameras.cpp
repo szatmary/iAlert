@@ -256,10 +256,15 @@
 
 
 ////////////////////////////////////////////////////////////////////////////
-Logitech700eCamera::Logitech700eCamera(QHostAddress addr, QString username, QString password)
-: m_addr(addr)
+Logitech700eCamera::Logitech700eCamera(QString id, QHostAddress addr, QString username, QString password)
+: Camera(id)
+, m_addr(addr)
 {
-    m_xmppCLient = QSharedPointer<QXmpp>( new QXmpp(addr,5222,username,password) );
+    m_xmppClient = QSharedPointer<QXmpp>( new QXmpp(addr,5222,username,password) );
+    connect(m_xmppClient.data(), SIGNAL(connected   ()), this, SLOT(xmppConnected   ()));
+    connect(m_xmppClient.data(), SIGNAL(disconnected()), this, SLOT(xmppDisconnected()));
+    connect(m_xmppClient.data(), SIGNAL(commandResult(QSharedPointer<gloox::Adhoc::Command>)), this, SLOT(xmppCommandResult(QSharedPointer<gloox::Adhoc::Command>)));
+    connect(m_xmppClient.data(), SIGNAL(publishEvent(QSharedPointer<gloox::PubSub::Event>)), this, SLOT(xmppPublishEvent(QSharedPointer<gloox::PubSub::Event>)));
 
 
 //    uuid = QUuid::createUuid(); // TODO this should be stored and reused
@@ -319,6 +324,146 @@ QString Logitech700eCamera::recordings()
 {
     qDebug() << __FUNCTION__;
     return "";
+}
+
+void Logitech700eCamera::xmppConnected()
+{
+    // Things to do once connected.
+    // Ptz = pan tilt zoom
+    // nvr = network video recorder ?
+    // wasatch = wasatch front (I havn't been to park city in a while)
+
+    // Reverse eng commands
+
+    // command: logitech-com:logitech-alert:nvr:basic:get
+    // command: urn:logitech-com:logitech-alert:nvr:time:get (Do i need to set time if it is wrong?)
+    // command: urn:logitech-com:logitech-alert:nvr:online:get (Do I really care about this one?)
+    // command: urn:logitech-com:logitech-alert:nvr:devices:get
+
+    // pubsub: urn:logitech-com:logitech-alert:remote-event:device:basic:settings
+    // pubsub: urn:logitech-com:logitech-alert:remote-event:device:video:settings
+    // pubsub: urn:logitech-com:logitech-alert:remote-event:device:video:motion-detection:settings
+    // pubsub: urn:logitech-com:logitech-alert:remote-event:device:video:ptz
+    // pubsub: urn:logitech-com:logitech-alert:remote-event:device:audio:settings
+    // pubsub: urn:logitech-com:logitech-alert:remote-event:device:alert:settings
+    // pubsub: urn:logitech-com:logitech-alert:remote-event:device:wasatch:settings
+    // pubsub: urn:logitech-com:logitech-alert:remote-event:device:media:recording:started
+    // pubsub: urn:logitech-com:logitech-alert:remote-event:device:media:recording:motion-detected
+    // pubsub: urn:logitech-com:logitech-alert:remote-event:device:media:recording:ended
+
+
+    // command: urn:logitech-com:logitech-alert:nvr:device:alert:get (I don't know what this one is, something to do with email)
+    // AvailableLiveMediaStreamsInfo: logitech-alert:device:media:stream
+    // Ptz: urn:logitech-com:logitech-alert:device:video:ptz (Pan Tilt Zoom)
+    // command: urn:logitech-com:logitech-alert:nvr:device:video:get
+    // CaptureLiveImage: urn:logitech-com:logitech-alert:device:media:image
+    // command: urn:logitech-com:logitech-alert:nvr:device:audio:get
+    // command urn:logitech-com:logitech-alert:nvr:device:wasatch:get
+    // Query: urn:logitech-com:logitech-alert:device:media:recording:search
+    // Transfer: urn:logitech-com:logitech-alert:device:media:recording:file
+
+    commandNvrBasicGet();
+    subscribeRecordingEnded();
+
+
+    // All known commands: (found via m_adHoc->getCommands();
+    //urn:logitech-com:logitech-alert:device:media:recording:delete LogiNvrControlDeviceMediaRecordingDelete
+    //urn:logitech-com:logitech-alert:device:media:recording:protect LogiNvrControlDeviceMediaRecordingProtect
+    //urn:logitech-com:logitech-alert:nvr:basic:get LogiNvrControlNvrBasicGetRequest
+    //urn:logitech-com:logitech-alert:nvr:basic:set LogiNvrControlNvrBasicSetRequest
+    //urn:logitech-com:logitech-alert:nvr:device:alert:get LogiNvrControlDeviceAlertGetRequest
+    //urn:logitech-com:logitech-alert:nvr:device:alert:set LogiNvrControlDeviceAlertSetRequest
+    //urn:logitech-com:logitech-alert:nvr:device:audio:get LogiNvrControlDeviceAudioGetRequest
+    //urn:logitech-com:logitech-alert:nvr:device:audio:set LogiNvrControlDeviceAudioSetRequest
+    //urn:logitech-com:logitech-alert:nvr:device:get LogiNvrControlDeviceBasicGetRequest
+    //urn:logitech-com:logitech-alert:nvr:device:set LogiNvrControlDeviceBasicSetRequest
+    //urn:logitech-com:logitech-alert:nvr:device:video:get LogiNvrControlDeviceVideoGetRequest
+    //urn:logitech-com:logitech-alert:nvr:device:video:set LogiNvrControlDeviceVideoSetRequest
+    //urn:logitech-com:logitech-alert:nvr:device:wasatch:get LogiNvrControlDeviceWasatchGetRequest
+    //urn:logitech-com:logitech-alert:nvr:device:wasatch:set LogiNvrControlDeviceWasatchSetRequest
+    //urn:logitech-com:logitech-alert:nvr:devices:get LogiNvrControlNvrDevicesGetRequest
+    //urn:logitech-com:logitech-alert:nvr:diagnostics:bandwidth-test:start LogiNvrControlNvrBandwidthTestStart
+    //urn:logitech-com:logitech-alert:nvr:online:get LogiNvrControlNvrOnlineGetRequest
+    //urn:logitech-com:logitech-alert:nvr:online:set LogiNvrControlNvrOnlineSetRequest
+    //urn:logitech-com:logitech-alert:nvr:reset LogiNvrControlNvrReset
+    //urn:logitech-com:logitech-alert:nvr:security:key:change LogiNvrControlNvrSecurityChangeKey
+    //urn:logitech-com:logitech-alert:nvr:security:password:change LogiNvrControlNvrSecurityChangePassword
+    //urn:logitech-com:logitech-alert:nvr:time:get LogiNvrControlNvrTimeGetRequest
+    //urn:logitech-com:logitech-alert:nvr:time:set LogiNvrControlNvrTimeSetRequest
+}
+
+void Logitech700eCamera::xmppDisconnected()
+{
+    qDebug() << __FUNCTION__;
+}
+
+void Logitech700eCamera::commandNvrBasicGet()
+{
+    gloox::DataForm *form = new gloox::DataForm(gloox::TypeSubmit,"Get NVR Basic Request");
+    form->addField( gloox::DataFormField::TypeHidden, "FORM_TYPE", "urn:logitech-com:logitech-alert:nvr:basic:get" );
+    gloox::Adhoc::Command *cmd = new gloox::Adhoc::Command("urn:logitech-com:logitech-alert:nvr:basic:get", gloox::Adhoc::Command::Execute, form);
+
+    m_xmppClient->sendCommand( cmd );
+}
+
+void Logitech700eCamera::subscribeRecordingEnded()
+{
+    m_xmppClient->subscribe("urn:logitech-com:logitech-alert:remote-event:device:media:recording:ended");
+}
+
+void Logitech700eCamera::requestRecordingTransfer(QString recordingId)
+{
+    gloox::Tag *Transfer       = new gloox::Tag("Transfer");
+    gloox::Tag *MediaRecording = new gloox::Tag(Transfer, "MediaRecording");
+    gloox::Tag *FileTransfer   = new gloox::Tag(Transfer, "FileTransfer");
+    gloox::Tag *TransferMethod = new gloox::Tag(FileTransfer, "TransferMethod");
+
+    Transfer->setXmlns("urn:logitech-com:logitech-alert:device:media:recording:file");
+    MediaRecording->addAttribute("id",recordingId.toUtf8().constData());
+    FileTransfer->setXmlns("urn:logitech-com:logitech-alert:file-transfer");
+    TransferMethod->addAttribute("type","http://jabber.org/protocol/bytestreams");
+
+    m_xmppClient->sendCustomIq( gloox::IQ::Set, Transfer );
+}
+
+void Logitech700eCamera::xmppCommandResult(QSharedPointer<gloox::Adhoc::Command> cmd)
+{
+    QString node = cmd->node().c_str();
+    if ( "urn:logitech-com:logitech-alert:nvr:basic:get" == node )
+    {
+        const gloox::DataForm *form = cmd->form();
+        m_instanceId                 = QString( form->field("InstanceId")->value().c_str() );
+        m_instanceName               = QString( form->field("InstanceName")->value().c_str() );
+        m_instanceType               = QString( form->field("InstanceType")->value().c_str() );
+        m_softwareVersion            = QString( form->field("SoftwareVersion")->value().c_str() );
+        m_softwareVersionReleaseDate = QString( form->field("SoftwareVersionReleaseDate")->value().c_str() );
+        m_softwareInstallDate        = QString( form->field("SoftwareInstallDate")->value().c_str() );
+        m_operatingSystemFullName    = QString( form->field("OperatingSystemFullName")->value().c_str() );
+        m_operatingSystemVersion     = QString( form->field("OperatingSystemVersion")->value().c_str() );
+        m_systemUpTime               = QString( form->field("SystemUpTime")->value().c_str() );
+    }
+}
+
+void Logitech700eCamera::xmppPublishEvent(QSharedPointer<gloox::PubSub::Event> event)
+{
+    gloox::Tag *tag = event->tag();
+    tag = tag->findChild("items");
+    tag = tag->findChild("item");
+    tag = tag->findChild("MediaRecordingEnded");
+
+    gloox::Tag *ThumbnailSnapshot = tag->findChild("ThumbnailSnapshot");
+
+    m_lastEventDateTime = QDateTime::fromString( ThumbnailSnapshot->findAttribute("timestamp").c_str(), Qt::ISODate );
+    QString    mimeType = ThumbnailSnapshot->findAttribute("mimeType").c_str();
+    QByteArray cdata    = QByteArray::fromBase64( ThumbnailSnapshot->cdata().c_str() );
+    m_lastEventSnapshot.loadFromData( cdata, mimeType.toAscii().constData() );
+
+    emit recordingEnded();
+
+    // Add recording to transfer queue
+    gloox::Tag *MediaRecording = tag->findChild("MediaRecording");
+    QString recordingId = MediaRecording->findAttribute("id").c_str();
+    requestRecordingTransfer( recordingId );
 }
 
 //void Logitech700eCamera::handleNewRecording(QString id)

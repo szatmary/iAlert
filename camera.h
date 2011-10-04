@@ -3,7 +3,10 @@
 
 #include <QUrl>
 #include <QHash>
+#include <QPixmap>
+#include <QDateTime>
 #include <QSharedPointer>
+
 
 class Camera : public QObject
 {
@@ -19,15 +22,21 @@ public:
         Audio          = 0x00000008
     };
 
-    Camera();
+    Camera(QString id, QObject *parent = 0);
     virtual ~Camera();
+    QString id() { return m_id; }
     virtual int features() = 0;
     virtual QUrl liveStream() = 0;
     virtual QString recordings() = 0;
 
-    static void discoverCameras();
+    virtual QDateTime lastRecordingDateTime() { return QDateTime(); }
+    virtual QPixmap   lastRecordingSnapshot() { return QPixmap(); }
+
 signals:
     void newRecording();
+    void recordingEnded();
+private:
+    QString m_id;
 };
 
 

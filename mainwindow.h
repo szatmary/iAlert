@@ -5,9 +5,6 @@
 #include <QVBoxLayout>
 #include <QMainWindow>
 #include <QListWidgetItem>
-#include <phonon/videoplayer.h>
-
-#include <gloox/gloox.h>
 
 #include "camera.h"
 #include "qupnp.h"
@@ -29,9 +26,13 @@ public:
 public slots:
     void refreshCameraList();
     void upnpDiscovery(QUpnpDiscovery);
+    void upnpDiscoveryTimeout();
+    void cameraRecordingEnded();
 private slots:
     void on_cameraRefresh_clicked();
     void on_cameraList_currentIndexChanged(const QString &arg1);
+
+    void on_eventList_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
 
 private:
     void closeEvent(QCloseEvent *event);
@@ -39,11 +40,6 @@ private:
 
     Ui::MainWindow *ui;
     CameraRoster    cameras;
-
-// Video Window
-    QWidget              videoWindow;
-    QVBoxLayout         *videoLayout;
-    Phonon::VideoPlayer *videoPlayer;
 };
 
 #endif // MAINWINDOW_H
