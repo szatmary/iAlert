@@ -21,7 +21,8 @@ SOURCES += main.cpp\
     qupnp.cpp \
     qxmpp.cpp \
     videowidget.cpp \
-    registry.cpp
+    registry.cpp \
+    httpserver.cpp
 
 HEADERS  += mainwindow.h \
     camera.h \
@@ -29,12 +30,15 @@ HEADERS  += mainwindow.h \
     qupnp.h \
     qxmpp.h \
     videowidget.h \
-    registry.h
+    registry.h \
+    httpserver.h
 
 
 FORMS    += mainwindow.ui
 
 LIBS += -lupnp -lgloox
+
+
 
 
 
