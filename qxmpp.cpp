@@ -22,8 +22,6 @@ QXmppFileTransfer::QXmppFileTransfer(QString from, QString to, QString sid, QStr
 , m_desc(desc)
 , m_fileHash( QCryptographicHash::Md5 )
 {
-    qDebug() << date.toString(Qt::ISODate);
-
     m_timer.start( XMPPFILETRANSFER_TIMEOUT );
     connect(&m_timer,SIGNAL(timeout()),this,SLOT(timeout()));
 }
@@ -69,7 +67,6 @@ void QXmppFileTransfer::handleBytestreamData (gloox::Bytestream *bs, const std::
 
 void QXmppFileTransfer::handleBytestreamError (gloox::Bytestream *bs, const gloox::IQ &iq)
 {
-    qDebug() << __FUNCTION__ << iq.tag()->xml().c_str();
     m_socketNotifier->setEnabled( false );
     emit finished(false);
 }

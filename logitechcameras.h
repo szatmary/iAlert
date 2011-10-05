@@ -74,14 +74,12 @@ public:
 
     void commandNvrBasicGet();
     void subscribeRecordingEnded();
+    void queueRecordingTransfer(QString);
 
-    void requestRecordingTransfer(QString);
+    void getRecordingList();
 
     virtual QDateTime lastRecordingDateTime() { return m_lastEventDateTime; }
     virtual QPixmap   lastRecordingSnapshot() { return m_lastEventSnapshot; }
-private:
-    QHostAddress m_addr;
-private:
 signals:
     void newRecording(QString);
 public slots:
@@ -93,6 +91,9 @@ public slots:
     void xmppCustomStanza(QSharedPointer<gloox::Tag>);
 private slots:
 private:
+    void doRecordingTransfer(QString);
+
+    QHostAddress m_addr;
     QSharedPointer<QXmpp> m_xmppClient;
 
     // camera info
@@ -106,8 +107,9 @@ private:
     QString m_operatingSystemVersion;
     QString m_systemUpTime;
 
-    QDateTime m_lastEventDateTime;
-    QPixmap   m_lastEventSnapshot;
+    QDateTime   m_lastEventDateTime;
+    QPixmap     m_lastEventSnapshot;
+    QStringList m_downloadQueue;
 };
 
 #endif // LOGITECHCAMERAS_H

@@ -20,6 +20,7 @@ public:
     static bool addRecording(Recording &rec);
     static Recording findRecordingByHash(QString);
     static Recording findRecordingById(QString);
+    static QList<Recording> findRecordingsByDate(QDate);
 
 
 private:

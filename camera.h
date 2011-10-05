@@ -56,7 +56,7 @@ public:
 
     inline QString filePath() { return path().absoluteFilePath( m_fileName ); }
     inline bool mkpath() { QDir d(path()); return d.exists() ? true : d.mkpath(d.absolutePath()); }
-    inline bool exists() { return QFileInfo( filePath() ).exists(); }
+    inline bool exists() { return m_fileName.isEmpty() ? false : QFileInfo( filePath() ).exists(); }
     inline QDir path()
     {
         return QDir( QDesktopServices::storageLocation( QDesktopServices::MoviesLocation ) + "/iAlert/" + m_deviceId +

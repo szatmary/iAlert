@@ -44,7 +44,6 @@ void MainWindow::newRecording(QString id)
 {
     Camera *camera = (Camera *)sender();
 
-    qDebug() << "new recording" << id;
     //    int index = ui->cameraList->findText( camera->id() );
 //    if ( index >= 0 ) { ui->cameraList->setCurrentIndex(); }
     ui->lastEventTimeLabel->setText( camera->lastRecordingDateTime().toString( Qt::SystemLocaleShortDate)  );
@@ -52,10 +51,12 @@ void MainWindow::newRecording(QString id)
     int row = ui->eventTable->rowCount();
 
     Recording rec = Registry::findRecordingById( id );
-
-    ui->eventTable->insertRow( row );
-    ui->eventTable->setItem( row, 0, new QTableWidgetItem( rec.m_fileTime.time().toString() ) );
-    ui->eventTable->setItem( row, 1, new QTableWidgetItem( id ) );
+    if ( ui->calendar->selectedDate() == rec.m_fileTime.date() )
+    { // add to view if we are looking at this day
+        ui->eventTable->insertRow( row );
+        ui->eventTable->setItem( row, 0, new QTableWidgetItem( rec.m_fileTime.time().toString() ) );
+        ui->eventTable->setItem( row, 1, new QTableWidgetItem( id ) );
+    }
 }
 
 void MainWindow::refreshCameraList()
@@ -96,33 +97,50 @@ void MainWindow::on_cameraRefresh_clicked()
 
 void MainWindow::on_cameraList_currentIndexChanged(const QString &arg1)
 {
-    CameraRoster::iterator i = cameras.find( arg1 );
-    if( cameras.end() != i )
-    {
-        ui->eventTable->clearContents();
-    }
+    on_calendar_selectionChanged();
 }
-
-//void MainWindow::on_eventList_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous)
-//{
-//    Q_UNUSED(previous);
-//    if( "Live" == current->text() )
-//    {
-//        QString cameraName = ui->cameraList->currentText();
-//        QSharedPointer<Camera> camera = cameras[cameraName];
-//        ui->videoWidget->play( camera->liveStream().toString() );
-//    }
-//}
 
 void MainWindow::on_calendar_selectionChanged()
 {
-    // TODO load the recordings from teh database.
+    // This is a bit of a race condition here.
+    // we add a recording to the database beofr it is done downloading.
+    ui->eventTable->clearContents();
+    CameraRoster::iterator i = cameras.find( ui->cameraList->currentText() );
+    if( cameras.end() != i )
+    {
+        // Really? we have to delete teh rows one at a time?
+        while( ui->eventTable->rowCount() )
+            ui->eventTable->removeRow( 0 );
+
+        ui->eventTable->insertRow(0);
+        ui->eventTable->setItem( 0, 0, new QTableWidgetItem( "LIVE" ) );
+        ui->eventTable->setItem( 0, 1, new QTableWidgetItem( (*i)->liveStream().toString() ) );
+        ui->eventTable->setCurrentCell(0,0);
+
+        QList<Recording> list = Registry::findRecordingsByDate( ui->calendar->selectedDate() );
+        qDebug() << ui->calendar->selectedDate() << list.count();
+        foreach(Recording rec, list)
+        {
+            int row = ui->eventTable->rowCount();
+            ui->eventTable->insertRow( row );
+            ui->eventTable->setItem( row, 0, new QTableWidgetItem( rec.m_fileTime.time().toString() ) );
+            ui->eventTable->setItem( row, 1, new QTableWidgetItem( rec.m_recordingId ) );
+        }
+    }
 }
 
 void MainWindow::on_eventTable_itemSelectionChanged()
 {
     int row = ui->eventTable->currentRow();
-    QString id = ui->eventTable->item(row,1)->text();
-    Recording rec = Registry::findRecordingById( id );
-    ui->videoWidget->play( rec.filePath() );
+    QString time = ui->eventTable->item(row,0)->text();
+    QString id   = ui->eventTable->item(row,1)->text();
+    if( "LIVE" == time )
+    {
+        qDebug() << __LINE__ << "Playing" << id;
+        ui->videoWidget->play( id );
+    } else {
+        Recording rec = Registry::findRecordingById( id );
+        qDebug() << __LINE__  << "Playing" << rec.filePath();
+        ui->videoWidget->play( rec.filePath() );
+    }
 }

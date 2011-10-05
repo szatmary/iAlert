@@ -93,4 +93,27 @@ Recording Registry::findRecordingById(QString recordingId)
     return rec;
 }
 
+QList<Recording> Registry::findRecordingsByDate(QDate date)
+{
+    QList<Recording> list;
+    int StartTime = QDateTime( date ).toTime_t();
+    int EndTime = QDateTime( date.addDays(1) ).toTime_t();
+    QSqlQuery q("SELECT [recordingId], [deviceId], [fileName], [fileSize], [fileTime], [fileHash] FROM recording WHERE [fileTime] >= ? AND [fileTime] < ? ORDER BY [fileTime]");
+    q.bindValue(0,StartTime);
+    q.bindValue(1,EndTime);
+    q.exec();
+    while( q.next() )
+    {
+        Recording rec;
+        rec.m_recordingId = q.value(0).toString();
+        rec.m_deviceId    = q.value(1).toString();
+        rec.m_fileName    = q.value(2).toString();
+        rec.m_fileSize    = q.value(3).toLongLong();
+        rec.m_fileTime    = QDateTime::fromTime_t( q.value(4).toUInt() );
+        rec.m_fileHash    = q.value(5).toString();
+        list.append( rec );
+    }
+
+    return list;
+}
 
