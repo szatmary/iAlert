@@ -10,79 +10,76 @@
 #include <gloox/connectiontcpclient.h>
 
 
-XMppFileTransfer::XMppFileTransfer(QString from, QString to, QString sid, QString name, qint64 size, QString hash, QDateTime date, QString mimetype, QString desc)
+QXmppFileTransfer::QXmppFileTransfer(QString from, QString to, QString sid, QString name, qint64 size, QString hash, QDateTime date, QString mimetype, QString desc)
 : m_from(from)
 , m_to(to)
 , m_sid(sid)
 , m_name(name)
 , m_size(size)
-, m_hash(hash)
+, m_hash(hash.toLower())
 , m_date(date)
 , m_mimetype(mimetype)
 , m_desc(desc)
 , m_fileHash( QCryptographicHash::Md5 )
 {
+    qDebug() << date.toString(Qt::ISODate);
+
     m_timer.start( XMPPFILETRANSFER_TIMEOUT );
     connect(&m_timer,SIGNAL(timeout()),this,SLOT(timeout()));
 }
 
 
-void XMppFileTransfer::beginTransfer(gloox::Bytestream *bs)
+void QXmppFileTransfer::beginTransfer(gloox::Bytestream *bs)
 {
-    qDebug() << __FUNCTION__;
+    m_bs = bs;
     if( gloox::Bytestream::S5B != bs->type() )
     {
         qDebug() << "Only socks 5 bytes streams are suported!";
-        bs->close();
         emit finished(false);
         return;
     }
 
-    m_bs = bs;
-    m_bs->registerBytestreamDataHandler( this );
-
-    int sock = static_cast<gloox::ConnectionTCPClient*>( ((gloox::SOCKS5Bytestream*)m_bs)->connectionImpl() )->socket();
+    bs->registerBytestreamDataHandler( this );
+    bs->connect();
+    int sock = static_cast<gloox::ConnectionTCPClient*>( ((gloox::SOCKS5Bytestream*)bs)->connectionImpl() )->socket();
     m_socketNotifier = QSharedPointer<QSocketNotifier>( new QSocketNotifier(sock,QSocketNotifier::Read) );
     connect(m_socketNotifier.data(),SIGNAL(activated(int)),this,SLOT(readyRead()));
     m_socketNotifier->setEnabled( true );
     readyRead(); // Just in case something came in while we were setting stuff up
 }
 
-void XMppFileTransfer::readyRead()
+void QXmppFileTransfer::readyRead()
 {
     m_timer.start( XMPPFILETRANSFER_TIMEOUT ); // time out broken transfers
     m_bs->recv(1);
 }
 
-void XMppFileTransfer::timeout()
+void QXmppFileTransfer::timeout()
 {
     qDebug() << "Transfer timedout";
     m_socketNotifier->setEnabled( false );
-    m_bs->close();
     emit finished(false);
 }
 
-void XMppFileTransfer::handleBytestreamData (gloox::Bytestream *bs, const std::string &data)
+void QXmppFileTransfer::handleBytestreamData (gloox::Bytestream *bs, const std::string &data)
 {
-    m_fileHash.addData( data.c_str() );
-    m_file.write(data.c_str() );
+    m_fileHash.addData( data.c_str(), data.length() );
+    m_file.write( data.c_str(), data.length() );
 }
 
-void XMppFileTransfer::handleBytestreamError (gloox::Bytestream *bs, const gloox::IQ &iq)
+void QXmppFileTransfer::handleBytestreamError (gloox::Bytestream *bs, const gloox::IQ &iq)
 {
     qDebug() << __FUNCTION__ << iq.tag()->xml().c_str();
     m_socketNotifier->setEnabled( false );
-    m_bs->close();
     emit finished(false);
 }
 
-void XMppFileTransfer::handleBytestreamOpen (gloox::Bytestream *bs)
+void QXmppFileTransfer::handleBytestreamOpen (gloox::Bytestream *bs)
 {
-    qDebug() << __FUNCTION__;
     m_file.open();
 }
 
-void XMppFileTransfer::handleBytestreamClose (gloox::Bytestream *bs)
+void QXmppFileTransfer::handleBytestreamClose (gloox::Bytestream *bs)
 {
     m_socketNotifier->setEnabled( false );
     if( m_file.size() != m_size || m_fileHash.result().toHex().toLower() != m_hash.toLower() )
@@ -99,6 +96,7 @@ void XMppFileTransfer::handleBytestreamClose (gloox::Bytestream *bs)
 /////////////////////////////////////////////////////////////////////////////////////////////////
 QXmpp::QXmpp(QHostAddress addr, quint16 port, QString username, QString password, QObject *parent)
 : QObject(parent)
+, nextStanzeExtType(gloox::ExtUser + 1)
 {
     // The UUID should be set befor we get here
     QString uuid = Registry::getValue("uuid").toString();
@@ -128,6 +126,8 @@ QXmpp::QXmpp(QHostAddress addr, quint16 port, QString username, QString password
 
     qRegisterMetaType< QSharedPointer<gloox::Adhoc::Command> >("QSharedPointer<gloox::Adhoc::Command>"); // Is the the correct spot to do this?
     qRegisterMetaType< QSharedPointer<gloox::PubSub::Event> >("QSharedPointer<gloox::PubSub::Event>"); // Is the the correct spot to do this?
+    qRegisterMetaType< QSharedPointer<QXmppFileTransfer> >("QSharedPointer<QXmppFileTransfer>"); // Is the the correct spot to do this?
+    qRegisterMetaType< QSharedPointer<gloox::Tag> >("QSharedPointer<gloox::Tag>"); // Is the the correct spot to do this?
 
     QMetaObject::invokeMethod( this, "connectToHost" );
 }
@@ -190,11 +190,25 @@ void QXmpp::readyRead()
     m_glooxClient->recv(1);
 }
 
-void QXmpp::handleFTRequest (const gloox::JID &from, const gloox::JID &to, const std::string &sid, const std::string &name, long size, const std::string &hash, const std::string &date, const std::string &mimetype, const std::string &desc, int stypes)
+void QXmpp::registerCustomeStanza(QString filterString)
 {
-    XMppFileTransfer *ft = new XMppFileTransfer( from.full().c_str(), to.full().c_str(), sid.c_str(), name.c_str(), size, hash.c_str(), QDateTime::fromString(date.c_str(),Qt::ISODate), mimetype.c_str(), desc.c_str() );
-    // TODO check stype and reject any non socks transfers
-    m_activeTransfers.insert( sid.c_str(), QSharedPointer<XMppFileTransfer>(  ) );
+    m_glooxClient->registerStanzaExtension( new QXmppCustomStanza( filterString.toUtf8().constData(), nextStanzeExtType, this ) );
+    ++nextStanzeExtType;
+}
+
+void QXmpp::handleCustom(std::string filterString, int type, const gloox::Tag *tag)
+{
+    Q_UNUSED(filterString); Q_UNUSED(type);
+    if( tag ) { emit customStanza( QSharedPointer<gloox::Tag>( tag->clone() ) ); }
+}
+
+void QXmpp::handleFTRequest (const gloox::JID &from, const gloox::JID &to, const std::string &sid, const std::string &name, long size, const std::string &hash, const std::string &date, const std::string &mimetype, const std::string &desc, int stypes)
+{    
+    QXmppFileTransfer *ft = new QXmppFileTransfer( from.full().c_str(), to.full().c_str(), sid.c_str(), name.c_str(), size, hash.c_str(), QDateTime::fromString(date.c_str(),Qt::ISODate), mimetype.c_str(), desc.c_str() );
+    connect(ft,SIGNAL(finished(bool)),this,SLOT(transferDone(bool)));
+
+    // TODO check stypes and reject any non socks transfers
+    m_activeTransfers.insert( sid.c_str(), QSharedPointer<QXmppFileTransfer>( ft ) );
     m_fileTransfer->acceptFT( from, sid ); // We will accept all transfer reuests for now
 }
 
@@ -206,10 +220,9 @@ void QXmpp::handleFTRequestError (const gloox::IQ &iq, const std::string &sid)
 void QXmpp::handleFTBytestream (gloox::Bytestream *bs)
 {
     qDebug() << __FUNCTION__;
-    QHash< QString,QSharedPointer<XMppFileTransfer> >::const_iterator i = m_activeTransfers.find( bs->sid().c_str() );
+    QHash< QString,QSharedPointer<QXmppFileTransfer> >::iterator i = m_activeTransfers.find( bs->sid().c_str() );
     if ( i != m_activeTransfers.end() )
     {
-        qDebug() << "starting transfer" << bs->sid().c_str();
         (*i)->beginTransfer(bs);
     }
 }
@@ -217,11 +230,11 @@ void QXmpp::handleFTBytestream (gloox::Bytestream *bs)
 void QXmpp::transferDone(bool ok)
 {
     // remove it from the active transfers
-    XMppFileTransfer *transfer = (XMppFileTransfer*)sender();
-    QHash< QString,QSharedPointer<XMppFileTransfer> >::iterator i = m_activeTransfers.find( transfer->sid() );
+    QXmppFileTransfer *transfer = (QXmppFileTransfer*)sender();
+    QHash< QString,QSharedPointer<QXmppFileTransfer> >::iterator i = m_activeTransfers.find( transfer->sid() );
     if ( i != m_activeTransfers.end() )
     {
-        emit transferComplete( *i, ok );
+        emit transferComplete( (*i), ok );
         m_activeTransfers.erase( i );
     }
 }

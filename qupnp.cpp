@@ -23,7 +23,6 @@ QUpnp::QUpnp(QObject *parent)
     qRegisterMetaType<QUpnpDiscovery>("QUpnpDiscovery"); // Is the the correct spot to do this?
 }
 
-
 void QUpnp::discover(int searchTime, QString target)
 {
     UpnpSearchAsync( UpnpHandle, searchTime, target.toAscii().constData(), this );

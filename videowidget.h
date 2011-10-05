@@ -12,6 +12,7 @@ class VideoWidget : public QWidget
 public:
     explicit VideoWidget(QWidget *parent = 0);
     void play(QString);
+    void stop();
 signals:
 
 public slots:

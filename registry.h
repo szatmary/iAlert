@@ -1,6 +1,8 @@
 #ifndef REGISTRY_H
 #define REGISTRY_H
 
+#include "camera.h"
+
 #include <QObject>
 #include <QVariant>
 #include <QSqlDatabase>
@@ -14,6 +16,12 @@ public:
 
     static QVariant getValue(QString name, QVariant defaultValue = QVariant());
     static bool     setValue(QString name, QVariant value);
+
+    static bool addRecording(Recording &rec);
+    static Recording findRecordingByHash(QString);
+    static Recording findRecordingById(QString);
+
+
 private:
     QSqlDatabase db;
 };

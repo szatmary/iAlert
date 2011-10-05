@@ -2,11 +2,13 @@
 #define CAMERA_H
 
 #include <QUrl>
+#include <QDir>
 #include <QHash>
+#include <QString>
 #include <QPixmap>
 #include <QDateTime>
 #include <QSharedPointer>
-
+#include <QDesktopServices>
 
 class Camera : public QObject
 {
@@ -41,5 +43,25 @@ private:
 
 
 typedef QHash<QString,QSharedPointer<Camera> > CameraRoster;
+
+class Recording
+{
+public:
+    QString   m_recordingId;
+    QString   m_deviceId;
+    QString   m_fileName;
+    qint64    m_fileSize;
+    QDateTime m_fileTime;
+    QString   m_fileHash;
+
+    inline QString filePath() { return path().absoluteFilePath( m_fileName ); }
+    inline bool mkpath() { QDir d(path()); return d.exists() ? true : d.mkpath(d.absolutePath()); }
+    inline bool exists() { return QFileInfo( filePath() ).exists(); }
+    inline QDir path()
+    {
+        return QDir( QDesktopServices::storageLocation( QDesktopServices::MoviesLocation ) + "/iAlert/" + m_deviceId +
+            "/" + m_fileTime.toString("yyyy") + "/" + m_fileTime.toString("MM") + "/" + m_fileTime.toString("dd") );
+    }
+};
 
 #endif // CAMERA_H

@@ -9,8 +9,12 @@ VideoWidget::VideoWidget(QWidget *parent)
     setLayout( layout );
 }
 
-
 void VideoWidget::play(QString url)
 {
     player->play( Phonon::MediaSource( url ) );
+}
+
+void VideoWidget::stop()
+{
+    player->stop();
 }

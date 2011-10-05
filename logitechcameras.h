@@ -83,11 +83,14 @@ private:
     QHostAddress m_addr;
 private:
 signals:
+    void newRecording(QString);
 public slots:
     void xmppConnected();
     void xmppDisconnected();
     void xmppCommandResult(QSharedPointer<gloox::Adhoc::Command>);
     void xmppPublishEvent(QSharedPointer<gloox::PubSub::Event> event);
+    void xmppTransferComplete(QSharedPointer<QXmppFileTransfer>,bool);
+    void xmppCustomStanza(QSharedPointer<gloox::Tag>);
 private slots:
 private:
     QSharedPointer<QXmpp> m_xmppClient;

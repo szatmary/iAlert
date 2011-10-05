@@ -2,6 +2,7 @@
 
 #include <QDir>
 #include <QDebug>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QDesktopServices>
 
@@ -18,7 +19,13 @@ Registry::Registry(QObject *parent)
 
     db.exec("CREATE TABLE IF NOT EXISTS settings ([name],[value])");
     db.exec("CREATE UNIQUE INDEX IF NOT EXISTS settings_idx1 ON settings ([name])");
+
+    db.exec("CREATE TABLE IF NOT EXISTS recording ([recordingId], [deviceId], [fileName], [fileSize], [fileTime], [fileHash])");
+    db.exec("CREATE UNIQUE INDEX IF NOT EXISTS recording_idx1 ON recording ([recordingId])");
+    db.exec("CREATE UNIQUE INDEX IF NOT EXISTS recording_idx2 ON recording ([fileHash])");
+    db.exec("CREATE INDEX IF NOT EXISTS recording_idx3 ON recording ([fileTime])");
 }
+
 
 QVariant Registry::getValue(QString name, QVariant defaultValue)
 {
@@ -37,3 +44,53 @@ bool Registry::setValue(QString name, QVariant value)
     q.bindValue(1,value);
     return q.exec();
 }
+
+bool Registry::addRecording(Recording &rec)
+{
+    QSqlQuery q("REPLACE INTO recording ( [recordingId], [deviceId], [fileName], [fileSize], [fileTime], [fileHash] )VALUES( ?,?,?,?,?,? )");
+    q.bindValue(0,rec.m_recordingId);
+    q.bindValue(1,rec.m_deviceId);
+    q.bindValue(2,rec.m_fileName);
+    q.bindValue(3,rec.m_fileSize);
+    q.bindValue(4,rec.m_fileTime.toTime_t());
+    q.bindValue(5,rec.m_fileHash);
+    return q.exec();
+}
+
+Recording Registry::findRecordingByHash(QString fileHash)
+{
+    Recording rec;
+    QSqlQuery q("SELECT [recordingId], [deviceId], [fileName], [fileSize], [fileTime], [fileHash] FROM recording WHERE [fileHash] = ?");
+    q.bindValue(0,fileHash);
+    if( q.exec() && q.next() )
+    {
+        rec.m_recordingId = q.value(0).toString();
+        rec.m_deviceId    = q.value(1).toString();
+        rec.m_fileName    = q.value(2).toString();
+        rec.m_fileSize    = q.value(3).toLongLong();
+        rec.m_fileTime    = QDateTime::fromTime_t( q.value(4).toUInt() );
+        rec.m_fileHash    = q.value(5).toString();
+    }
+
+    return rec;
+}
+
+Recording Registry::findRecordingById(QString recordingId)
+{
+    Recording rec;
+    QSqlQuery q("SELECT [recordingId], [deviceId], [fileName], [fileSize], [fileTime], [fileHash] FROM recording WHERE [recordingId] = ?");
+    q.bindValue(0,recordingId);
+    if( q.exec() && q.next() )
+    {
+        rec.m_recordingId = q.value(0).toString();
+        rec.m_deviceId    = q.value(1).toString();
+        rec.m_fileName    = q.value(2).toString();
+        rec.m_fileSize    = q.value(3).toLongLong();
+        rec.m_fileTime    = QDateTime::fromTime_t( q.value(4).toUInt() );
+        rec.m_fileHash    = q.value(5).toString();
+    }
+
+    return rec;
+}
+
+

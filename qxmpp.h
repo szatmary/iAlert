@@ -25,11 +25,11 @@
 #include <gloox/bytestreamdatahandler.h>
 
 #define XMPPFILETRANSFER_TIMEOUT 30000 // 30 seconds
-class XMppFileTransfer : public QObject, gloox::BytestreamDataHandler
+class QXmppFileTransfer : public QObject, gloox::BytestreamDataHandler
 {
 Q_OBJECT
 public:
-    XMppFileTransfer(QString from, QString to, QString sid, QString name, qint64 size, QString hash, QDateTime date, QString mimetype, QString desc);
+    QXmppFileTransfer(QString from, QString to, QString sid, QString name, qint64 size, QString hash, QDateTime date, QString mimetype, QString desc);
     void beginTransfer(gloox::Bytestream *bs);
 
     QString   from() { return m_from; }
@@ -72,9 +72,40 @@ private:
     QCryptographicHash m_fileHash;
 };
 
+class QXmppCustomHandler
+{
+public:
+    virtual void handleCustom(std::string filterString, int type, const gloox::Tag *)=0;
+};
+
+class QXmppCustomStanza : public gloox::StanzaExtension
+{
+public:
+    QXmppCustomStanza(std::string filterString, int type, QXmppCustomHandler *handler)
+    : gloox::StanzaExtension(type), m_filterString(filterString), m_tag( 0 ), m_handler(handler) {}
+
+    QXmppCustomStanza(std::string filterString, int type, QXmppCustomHandler *handler, const gloox::Tag *tag)
+    : gloox::StanzaExtension(type), m_filterString(filterString), m_handler(handler), m_tag(0) // Do I need to clone the tag?
+    {
+        handler->handleCustom(filterString,type,tag);
+    }
+
+    ~QXmppCustomStanza() { delete m_tag; }
+
+    virtual const std::string &filterString () const { return m_filterString; }
+
+    virtual gloox::StanzaExtension *newInstance (const gloox::Tag *tag) const { return new QXmppCustomStanza(m_filterString, extensionType(), m_handler, tag); }
+    virtual gloox::Tag *tag () const { return m_tag; }
+    virtual gloox::StanzaExtension *clone() const { return new QXmppCustomStanza( m_filterString, extensionType(), m_handler, 0 == m_tag ? m_tag->clone() : 0 ); }
+private:
+    std::string        m_filterString;
+    QXmppCustomHandler *m_handler;
+    gloox::Tag        *m_tag;
+};
+
 
 // Seperate out xmpp stuff to simplify the Camera code
-class QXmpp : public QObject, gloox::ConnectionListener, gloox::PresenceHandler, gloox::SIProfileFTHandler, gloox::AdhocHandler, gloox::MessageHandler, gloox::PubSub::ResultHandler
+class QXmpp : public QObject, QXmppCustomHandler, gloox::ConnectionListener, gloox::PresenceHandler, gloox::SIProfileFTHandler, gloox::AdhocHandler, gloox::MessageHandler, gloox::PubSub::ResultHandler
 {
     Q_OBJECT
 public:
@@ -84,6 +115,10 @@ public:
     void sendCommand(gloox::Adhoc::Command *cmd); // This will take ownership of cmd
     void sendCustomIq(gloox::IQ::IqType type, gloox::Tag *tag);// This will take ownership of tag
     void subscribe(QString node);
+    void registerCustomeStanza(QString filterString);
+
+    //XMppCustomHandler
+    virtual void handleCustom(std::string filterString, int type, const gloox::Tag *tag);
 
     //gloox::ConnectionListener
     virtual void onConnect() { emit connected(); }
@@ -135,7 +170,8 @@ signals:
     void disconnected();
     void commandResult(QSharedPointer<gloox::Adhoc::Command>);
     void publishEvent(QSharedPointer<gloox::PubSub::Event>);
-    void transferComplete(QSharedPointer<XMppFileTransfer>,bool);
+    void transferComplete(QSharedPointer<QXmppFileTransfer>,bool);
+    void customStanza(QSharedPointer<gloox::Tag>);
 public slots:
 
 private slots:
@@ -156,6 +192,40 @@ private:
     gloox::PubSub::Manager       *m_pubSubManager;
 
 
-    QHash< QString,QSharedPointer<XMppFileTransfer> > m_activeTransfers;
+    int nextStanzeExtType;
+    QHash< QString,QSharedPointer<QXmppFileTransfer> > m_activeTransfers;
 };
+
+class XMppCustomHandler
+{
+public:
+    virtual void handleCustom(std::string filterString, int type, gloox::Tag *tag);
+};
+
+
+class XMppCustomStanza : gloox::StanzaExtension
+{
+public:
+    XMppCustomStanza(std::string filterString, int type, XMppCustomHandler *handler)
+    : gloox::StanzaExtension(type), m_filterString(filterString), m_tag( 0 ), m_handler(handler) {}
+
+    XMppCustomStanza(std::string filterString, int type, XMppCustomHandler *handler, gloox::Tag *tag)
+    : gloox::StanzaExtension(type), m_filterString(filterString), m_handler(handler), m_tag(0) // Do I need to clone the tag?
+    {
+        handler->handleCustom(filterString,type,tag);
+    }
+
+    ~XMppCustomStanza() { delete m_tag; }
+
+    virtual const std::string &filterString () const { return m_filterString; }
+
+    virtual gloox::StanzaExtension *newInstance (const gloox::Tag *tag) const { return new XMppCustomStanza(m_filterString, extensionType(), m_handler, m_tag); }
+    virtual gloox::Tag *tag () const { return m_tag; }
+    virtual gloox::StanzaExtension *clone() const { return new XMppCustomStanza( m_filterString, extensionType(), m_handler, 0 == m_tag ? m_tag->clone() : 0 ); }
+private:
+    std::string        m_filterString;
+    XMppCustomHandler *m_handler;
+    gloox::Tag        *m_tag;
+};
+
 #endif // QXmpp_H

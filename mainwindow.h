@@ -27,12 +27,16 @@ public slots:
     void refreshCameraList();
     void upnpDiscovery(QUpnpDiscovery);
     void upnpDiscoveryTimeout();
-    void cameraRecordingEnded();
+    void newRecording(QString);
 private slots:
     void on_cameraRefresh_clicked();
     void on_cameraList_currentIndexChanged(const QString &arg1);
 
-    void on_eventList_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
+//    void on_eventList_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
+
+    void on_calendar_selectionChanged();
+
+    void on_eventTable_itemSelectionChanged();
 
 private:
     void closeEvent(QCloseEvent *event);

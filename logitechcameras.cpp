@@ -1,4 +1,6 @@
 #include "logitechcameras.h"
+#include "registry.h"
+
 
 #include <QDir>
 #include <QFileInfo>
@@ -261,10 +263,15 @@ Logitech700eCamera::Logitech700eCamera(QString id, QHostAddress addr, QString us
 , m_addr(addr)
 {
     m_xmppClient = QSharedPointer<QXmpp>( new QXmpp(addr,5222,username,password) );
+
+    m_xmppClient->registerCustomeStanza("/iq/Transfer[@xmlns='urn:logitech-com:logitech-alert:device:media:recording:file']");
+
     connect(m_xmppClient.data(), SIGNAL(connected   ()), this, SLOT(xmppConnected   ()));
     connect(m_xmppClient.data(), SIGNAL(disconnected()), this, SLOT(xmppDisconnected()));
     connect(m_xmppClient.data(), SIGNAL(commandResult(QSharedPointer<gloox::Adhoc::Command>)), this, SLOT(xmppCommandResult(QSharedPointer<gloox::Adhoc::Command>)));
     connect(m_xmppClient.data(), SIGNAL(publishEvent(QSharedPointer<gloox::PubSub::Event>)), this, SLOT(xmppPublishEvent(QSharedPointer<gloox::PubSub::Event>)));
+    connect(m_xmppClient.data(), SIGNAL(transferComplete(QSharedPointer<QXmppFileTransfer>,bool)), this, SLOT(xmppTransferComplete(QSharedPointer<QXmppFileTransfer>,bool)));
+    connect(m_xmppClient.data(), SIGNAL(customStanza(QSharedPointer<gloox::Tag>)), this, SLOT(xmppCustomStanza(QSharedPointer<gloox::Tag>)));
 
 
 //    uuid = QUuid::createUuid(); // TODO this should be stored and reused
@@ -423,6 +430,7 @@ void Logitech700eCamera::requestRecordingTransfer(QString recordingId)
     FileTransfer->setXmlns("urn:logitech-com:logitech-alert:file-transfer");
     TransferMethod->addAttribute("type","http://jabber.org/protocol/bytestreams");
 
+    qDebug() << "requesting" << recordingId;
     m_xmppClient->sendCustomIq( gloox::IQ::Set, Transfer );
 }
 
@@ -464,6 +472,56 @@ void Logitech700eCamera::xmppPublishEvent(QSharedPointer<gloox::PubSub::Event> e
     gloox::Tag *MediaRecording = tag->findChild("MediaRecording");
     QString recordingId = MediaRecording->findAttribute("id").c_str();
     requestRecordingTransfer( recordingId );
+}
+
+void Logitech700eCamera::xmppCustomStanza(QSharedPointer<gloox::Tag> tag)
+{
+    QString name = tag->name().c_str();
+    if ( "Transfer" == name )
+    {
+        qDebug() << tag->xml().c_str();
+
+        Recording rec;
+        gloox::Tag *MediaRecording = tag->findChild("MediaRecording");
+        rec.m_recordingId = MediaRecording->findAttribute("id").c_str();
+
+        gloox::Tag *Device = tag->findChild("Device");
+        rec.m_deviceId = Device->findAttribute("id").c_str();
+
+        gloox::Tag *FileTransfer = tag->findChild("FileTransfer");
+        gloox::Tag *File = FileTransfer->findChild("File");
+        rec.m_fileName = File->findAttribute("name").c_str();
+        rec.m_fileSize = QString( File->findAttribute("size").c_str() ).toLongLong();
+        rec.m_fileTime = QDateTime::fromString( File->findAttribute("date").c_str(), Qt::ISODate );
+        rec.m_fileHash = QString( File->findAttribute("hash").c_str() ).toLower();
+
+        Registry::addRecording( rec );
+    }
+}
+
+void Logitech700eCamera::xmppTransferComplete(QSharedPointer<QXmppFileTransfer> transfer,bool ok)
+{
+    qDebug() << __FUNCTION__  << __FILE__;
+    if ( ok )
+    {
+        qDebug() << __FUNCTION__  << __FILE__;
+        Recording rec = Registry::findRecordingByHash( transfer->hash() );
+        if( rec.m_fileHash == transfer->hash() )
+        {
+            qDebug() << __FUNCTION__  << __FILE__;
+            QString newName = rec.filePath();
+            rec.mkpath();
+            transfer->moveFile( newName );
+
+            // set the time stamps
+            struct utimbuf times;
+            times.actime  = rec.m_fileTime.toTime_t();
+            times.modtime = rec.m_fileTime.toTime_t();
+            utime( newName.toUtf8().constData(), &times );
+
+            emit newRecording(rec.m_recordingId);
+        }
+    }
 }
 
 //void Logitech700eCamera::handleNewRecording(QString id)
