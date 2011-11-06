@@ -51,6 +51,7 @@ void QUpnp::event(Upnp_Discovery *event)
     disco.m_ext = event->Ext;
     disco.m_destAddr = QHostAddress( (const sockaddr * )&event->DestAddr );
 
+//    qDebug() << disco.m_errCode << disco.m_expires << disco.m_deviceId << disco.m_deviceType << disco.m_serviceType << disco.m_serviceVer << disco.m_location << disco.m_os << disco.m_date << disco.m_ext << disco.m_destAddr;
     // can I emit form a non QThread? (This will execute ins a thread created by libupnp)
     emit discovery(disco);
 }

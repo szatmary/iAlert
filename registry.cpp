@@ -11,7 +11,7 @@ Registry::Registry(QObject *parent)
 : QObject(parent)
 {
     QString registryPath = QDesktopServices::storageLocation( QDesktopServices::DataLocation );
-    QDir dir(registryPath); if ( ! dir.exists() ); { dir.mkpath( registryPath ); }
+    QDir dir(registryPath); if ( ! dir.exists() ) { dir.mkpath( registryPath ); }
 
     db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName( registryPath + "/registry.db" );

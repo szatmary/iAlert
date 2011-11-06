@@ -97,18 +97,10 @@ void MainWindow::on_cameraRefresh_clicked()
 
 void MainWindow::on_cameraList_currentIndexChanged(const QString &arg1)
 {
-    on_calendar_selectionChanged();
-}
 
-void MainWindow::on_calendar_selectionChanged()
-{
-    // This is a bit of a race condition here.
-    // we add a recording to the database beofr it is done downloading.
-    ui->eventTable->clearContents();
     CameraRoster::iterator i = cameras.find( ui->cameraList->currentText() );
     if( cameras.end() != i )
     {
-        // Really? we have to delete teh rows one at a time?
         while( ui->eventTable->rowCount() )
             ui->eventTable->removeRow( 0 );
 
@@ -116,9 +108,22 @@ void MainWindow::on_calendar_selectionChanged()
         ui->eventTable->setItem( 0, 0, new QTableWidgetItem( "LIVE" ) );
         ui->eventTable->setItem( 0, 1, new QTableWidgetItem( (*i)->liveStream().toString() ) );
         ui->eventTable->setCurrentCell(0,0);
+        on_calendar_selectionChanged();
+    }
+}
+
+void MainWindow::on_calendar_selectionChanged()
+{
+    // This is a bit of a race condition here.
+    // we add a recording to the database beofore it is done downloading.
+    CameraRoster::iterator i = cameras.find( ui->cameraList->currentText() );
+    if( cameras.end() != i )
+    {
+        // Really? we have to delete teh rows one at a time?
+        while( 1 < ui->eventTable->rowCount() )
+            ui->eventTable->removeRow( 1 );
 
         QList<Recording> list = Registry::findRecordingsByDate( ui->calendar->selectedDate() );
-        qDebug() << ui->calendar->selectedDate() << list.count();
         foreach(Recording rec, list)
         {
             int row = ui->eventTable->rowCount();

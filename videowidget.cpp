@@ -2,19 +2,22 @@
 
 VideoWidget::VideoWidget(QWidget *parent)
 : QWidget(parent)
-, layout( new QVBoxLayout() )
-, player( new Phonon::VideoPlayer() )
 {
-    layout->addWidget( player );
-    setLayout( layout );
+    m_layout.addWidget( &m_player );
+    m_layout.addWidget( &m_seek );
+    m_layout.addWidget( &m_volume );
+    m_layout.setStretch(0,100);
+    setLayout( &m_layout );
 }
 
 void VideoWidget::play(QString url)
 {
-    player->play( Phonon::MediaSource( url ) );
+    m_player.play( Phonon::MediaSource( url ) );
+    m_seek.setMediaObject( m_player.mediaObject() );
+    m_volume.setAudioOutput( m_player.audioOutput() );
 }
 
 void VideoWidget::stop()
 {
-    player->stop();
+    m_player.stop();
 }

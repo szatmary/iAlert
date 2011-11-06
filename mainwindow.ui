@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1327</width>
+    <width>1213</width>
     <height>777</height>
    </rect>
   </property>
@@ -55,7 +55,7 @@
      <rect>
       <x>360</x>
       <y>10</y>
-      <width>960</width>
+      <width>841</width>
       <height>720</height>
      </rect>
     </property>
@@ -134,7 +134,7 @@
       <x>10</x>
       <y>390</y>
       <width>341</width>
-      <height>281</height>
+      <height>341</height>
      </rect>
     </property>
     <attribute name="horizontalHeaderStretchLastSection">
@@ -157,7 +157,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1327</width>
+     <width>1213</width>
      <height>22</height>
     </rect>
    </property>

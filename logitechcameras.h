@@ -4,64 +4,6 @@
 #include "qxmpp.h"
 #include "camera.h"
 
-//class LogitechHandler
-//{
-//public:
-//    virtual void handleNewRecording(QString id)=0;
-//};
-
-//class LogitechRecordingSearchResult : public gloox::StanzaExtension
-//{
-//public:
-//    LogitechRecordingSearchResult(LogitechHandler *handler);
-//    LogitechRecordingSearchResult(const gloox::Tag *tag, LogitechHandler *handler);
-//    LogitechRecordingSearchResult(const LogitechRecordingSearchResult &that);
-//    virtual const std::string &filterString () const;
-//    virtual StanzaExtension *newInstance (const gloox::Tag *tag) const;
-//    virtual gloox::Tag *tag () const;
-//    virtual StanzaExtension *clone () const;
-//private:
-//    LogitechHandler *m_handler;
-//};
-
-//// TODO make this interuptable somehow
-//class LogitechBytestreamDataHandler : public QThread, gloox::BytestreamDataHandler
-//{
-//Q_OBJECT
-//public:
-//    LogitechBytestreamDataHandler(QString cameraName, const gloox::JID &from, const gloox::JID &to, const std::string &sid, const std::string &name, long size, const std::string &hash, const std::string &date, const std::string &mimetype, const std::string &desc, int stypes);
-//    void beginTransfer(gloox::Bytestream *bs);
-
-//    virtual void handleBytestreamData (gloox::Bytestream *bs, const std::string &data);
-//    virtual void handleBytestreamError (gloox::Bytestream *bs, const gloox::IQ &iq);
-//    virtual void handleBytestreamOpen (gloox::Bytestream *bs);
-//    virtual void handleBytestreamClose (gloox::Bytestream *bs);
-//signals:
-//    void downloadComplete(QString,bool);
-//protected:
-//    virtual void run();
-//private:
-//    QString cameraName;
-//    QTemporaryFile file;
-//    QCryptographicHash fileHash;
-
-//    gloox::Bytestream *bs;
-
-//    const gloox::JID from;
-//    const gloox::JID to;
-//    const std::string sid;
-//    const std::string name;
-//    long size;
-//    const std::string hash;
-//    const std::string date;
-//    const std::string mimetype;
-//    const std::string desc;
-//    int stypes;
-
-//};
-
-
-
 class Logitech700eCamera : public Camera
 {
 Q_OBJECT

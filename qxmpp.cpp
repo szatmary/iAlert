@@ -9,7 +9,6 @@
 #include <gloox/socks5bytestream.h>
 #include <gloox/connectiontcpclient.h>
 
-
 QXmppFileTransfer::QXmppFileTransfer(QString from, QString to, QString sid, QString name, qint64 size, QString hash, QDateTime date, QString mimetype, QString desc)
 : m_from(from)
 , m_to(to)
@@ -25,7 +24,6 @@ QXmppFileTransfer::QXmppFileTransfer(QString from, QString to, QString sid, QStr
     m_timer.start( XMPPFILETRANSFER_TIMEOUT );
     connect(&m_timer,SIGNAL(timeout()),this,SLOT(timeout()));
 }
-
 
 void QXmppFileTransfer::beginTransfer(gloox::Bytestream *bs)
 {
@@ -152,7 +150,9 @@ private:
 public:
     QXmppCustomIq(gloox::IQ::IqType type, gloox::JID &to, gloox::Tag *tag, const std::string &id)
     : gloox::IQ(type,to,id), m_tag(tag) {}
+
     ~QXmppCustomIq() { delete m_tag; }
+
     gloox::Tag *tag() const
     {
         gloox::Tag *t = gloox::IQ::tag();
@@ -163,7 +163,7 @@ public:
 
 void QXmpp::sendCustomIq(gloox::IQ::IqType type, gloox::Tag *tag)
 {
-    QXmppCustomIq iq(type, m_serverJid, tag, m_glooxClient->getID());
+    QXmppCustomIq iq(type, m_serverJid, tag, m_glooxClient->getID() );
     m_glooxClient->send( iq );
 }
 
@@ -187,7 +187,7 @@ void QXmpp::readyRead()
     m_glooxClient->recv(1);
 }
 
-void QXmpp::registerCustomeStanza(QString filterString)
+void QXmpp::registerCustomStanza(QString filterString)
 {
     m_glooxClient->registerStanzaExtension( new QXmppCustomStanza( filterString.toUtf8().constData(), nextStanzeExtType, this ) );
     ++nextStanzeExtType;
@@ -200,7 +200,7 @@ void QXmpp::handleCustom(std::string filterString, int type, const gloox::Tag *t
 }
 
 void QXmpp::handleFTRequest (const gloox::JID &from, const gloox::JID &to, const std::string &sid, const std::string &name, long size, const std::string &hash, const std::string &date, const std::string &mimetype, const std::string &desc, int stypes)
-{    
+{
     QXmppFileTransfer *ft = new QXmppFileTransfer( from.full().c_str(), to.full().c_str(), sid.c_str(), name.c_str(), size, hash.c_str(), QDateTime::fromString(date.c_str(),Qt::ISODate), mimetype.c_str(), desc.c_str() );
     connect(ft,SIGNAL(finished(bool)),this,SLOT(transferDone(bool)));
 
@@ -239,6 +239,7 @@ void QXmpp::transferDone(bool ok)
 const std::string QXmpp::handleOOBRequestResult (const gloox::JID &from, const gloox::JID &to, const std::string &sid)
 {
     qDebug() << __FUNCTION__;
+    return "";
 }
 
 void QXmpp::handleAdhocSupport (const gloox::JID &remote, bool support)

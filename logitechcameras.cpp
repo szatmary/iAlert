@@ -21,8 +21,8 @@ Logitech700eCamera::Logitech700eCamera(QString id, QHostAddress addr, QString us
 {
     m_xmppClient = QSharedPointer<QXmpp>( new QXmpp(addr,5222,username,password) );
 
-    m_xmppClient->registerCustomeStanza("/iq/Transfer[@xmlns='urn:logitech-com:logitech-alert:device:media:recording:file']");
-    m_xmppClient->registerCustomeStanza("/iq/Query[@xmlns='urn:logitech-com:logitech-alert:device:media:recording:search']");
+    m_xmppClient->registerCustomStanza("/iq/Transfer[@xmlns='urn:logitech-com:logitech-alert:device:media:recording:file']");
+    m_xmppClient->registerCustomStanza("/iq/Query[@xmlns='urn:logitech-com:logitech-alert:device:media:recording:search']");
 
     connect(m_xmppClient.data(), SIGNAL(connected   ()), this, SLOT(xmppConnected   ()));
     connect(m_xmppClient.data(), SIGNAL(disconnected()), this, SLOT(xmppDisconnected()));
@@ -30,7 +30,6 @@ Logitech700eCamera::Logitech700eCamera(QString id, QHostAddress addr, QString us
     connect(m_xmppClient.data(), SIGNAL(publishEvent(QSharedPointer<gloox::PubSub::Event>)), this, SLOT(xmppPublishEvent(QSharedPointer<gloox::PubSub::Event>)));
     connect(m_xmppClient.data(), SIGNAL(transferComplete(QSharedPointer<QXmppFileTransfer>,bool)), this, SLOT(xmppTransferComplete(QSharedPointer<QXmppFileTransfer>,bool)));
     connect(m_xmppClient.data(), SIGNAL(customStanza(QSharedPointer<gloox::Tag>)), this, SLOT(xmppCustomStanza(QSharedPointer<gloox::Tag>)));
-
 
 //    uuid = QUuid::createUuid(); // TODO this should be stored and reused
 //    moveToThread( &thread );
@@ -41,39 +40,6 @@ Logitech700eCamera::Logitech700eCamera(QString id, QHostAddress addr, QString us
 Logitech700eCamera::~Logitech700eCamera()
 {
 }
-
-//void Logitech700eCamera::Logitech700eCameraImpl(QString username, QString password)
-//{
-//    qDebug() << __FUNCTION__;
-
-//    QString jidStr = username + "@" + hostAddress.toString() + "/Commander/" + uuid.toString().mid(1,36);
-//    gloox::JID jid( jidStr.toUtf8().constData() );
-//    client = QSharedPointer<gloox::Client>( new gloox::Client( jid, password.toUtf8().constData() ) );
-
-//    client->registerConnectionListener( this );
-//    client->registerPresenceHandler( this );
-//    client->registerMessageHandler( this );
-
-
-//    LogitechRecordingSearchResult *recordingSearch = new LogitechRecordingSearchResult( this );
-////    extensions.append( QSharedPointer<gloox::StanzaExtension>(recordingSearch) );
-//    client->registerStanzaExtension( recordingSearch );
-
-//    fileTransfer = new gloox::SIProfileFT( client.data(), this );
-//    adHoc = new gloox::Adhoc(client.data());
-
-//    if ( client->connect( false ) )
-//    {
-//        int sock = static_cast<gloox::ConnectionTCPClient*>( client->connectionImpl() )->socket();
-//        socketNotifier = QSharedPointer<QSocketNotifier>( new QSocketNotifier(sock,QSocketNotifier::Read) );
-//        connect(socketNotifier.data(),SIGNAL(activated(int)),this,SLOT(readyRead()));
-//        socketNotifier->setEnabled( true );
-//        readyRead();
-//    } else {
-//        // will this cause a double disconnect emit?
-//        emit disconnected();
-//    }
-//}
 
 int Logitech700eCamera::features()
 {
@@ -93,6 +59,8 @@ QString Logitech700eCamera::recordings()
 
 void Logitech700eCamera::xmppConnected()
 {
+    qDebug() << __FUNCTION__;
+
     // Things to do once connected.
     // Ptz = pan tilt zoom
     // nvr = network video recorder ?
@@ -129,7 +97,6 @@ void Logitech700eCamera::xmppConnected()
 
     commandNvrBasicGet();
     subscribeRecordingEnded();
-
 
     // All known commands: (found via m_adHoc->getCommands();
     //urn:logitech-com:logitech-alert:device:media:recording:delete LogiNvrControlDeviceMediaRecordingDelete
@@ -184,7 +151,7 @@ void Logitech700eCamera::queueRecordingTransfer(QString recordingId)
 }
 
 void Logitech700eCamera::doRecordingTransfer(QString recordingId)
-{    
+{
     gloox::Tag *Transfer       = new gloox::Tag("Transfer");
     gloox::Tag *MediaRecording = new gloox::Tag(Transfer, "MediaRecording");
     gloox::Tag *FileTransfer   = new gloox::Tag(Transfer, "FileTransfer");
@@ -267,7 +234,10 @@ void Logitech700eCamera::xmppPublishEvent(QSharedPointer<gloox::PubSub::Event> e
     m_lastEventDateTime = QDateTime::fromString( ThumbnailSnapshot->findAttribute("timestamp").c_str(), Qt::ISODate );
     QString    mimeType = ThumbnailSnapshot->findAttribute("mimeType").c_str();
     QByteArray cdata    = QByteArray::fromBase64( ThumbnailSnapshot->cdata().c_str() );
-    m_lastEventSnapshot.loadFromData( cdata, mimeType.toAscii().constData() );
+
+    QPixmap snapshot;
+    snapshot.loadFromData( cdata, mimeType.toAscii().constData() );
+    m_lastEventSnapshot = snapshot;
 
     emit recordingEnded();
 
@@ -296,11 +266,13 @@ void Logitech700eCamera::xmppCustomStanza(QSharedPointer<gloox::Tag> tag)
         rec.m_fileTime = QDateTime::fromString( File->findAttribute("date").c_str(), Qt::ISODate );
         rec.m_fileHash = QString( File->findAttribute("hash").c_str() ).toLower();
 
+        // TODO we should put the recording info in ram, not disk. And nly record to teh registry when teh recording is finisged downloading
         Registry::addRecording( rec );
     }
     else
     if ("Query" == name)
     {
+//        qDebug() << tag->xml().c_str();
         gloox::Tag *results = tag->findChild("Results");
         if( results )
         {

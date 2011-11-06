@@ -1,10 +1,14 @@
 #ifndef VIDEOWIDGET_H
 #define VIDEOWIDGET_H
 
-#include <QWidget>
+#include <Qwidget>
 #include <QVBoxLayout>
-#include <QSharedPointer>
+
 #include <phonon/videoplayer.h>
+#include <phonon/seekslider.h>
+#include <phonon/audiooutput.h>
+#include <phonon/volumeslider.h>
+#include <phonon/mediaobject.h>
 
 class VideoWidget : public QWidget
 {
@@ -18,8 +22,10 @@ signals:
 public slots:
 private:
     // TODO delete these when done
-    QVBoxLayout         *layout;
-    Phonon::VideoPlayer *player;
+    QVBoxLayout          m_layout;
+    Phonon::VideoPlayer  m_player;
+    Phonon::SeekSlider   m_seek;
+    Phonon::VolumeSlider m_volume;
 };
 
 #endif // VIDEOWIDGET_H
