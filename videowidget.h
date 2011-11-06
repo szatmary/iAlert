@@ -1,7 +1,7 @@
 #ifndef VIDEOWIDGET_H
 #define VIDEOWIDGET_H
 
-#include <Qwidget>
+#include <QWidget>
 #include <QVBoxLayout>
 
 #include <phonon/videoplayer.h>
