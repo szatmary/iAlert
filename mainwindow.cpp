@@ -43,16 +43,15 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::newRecording(QString id)
 {
     Camera *camera = (Camera *)sender();
+    CameraRoster::iterator i = cameras.find( ui->cameraList->currentText() );
 
-    //    int index = ui->cameraList->findText( camera->id() );
-//    if ( index >= 0 ) { ui->cameraList->setCurrentIndex(); }
     ui->lastEventTimeLabel->setText( camera->lastRecordingDateTime().toString( Qt::SystemLocaleShortDate)  );
     ui->lastEventImage->setPixmap( camera->lastRecordingSnapshot() );
     int row = ui->eventTable->rowCount();
 
     Recording rec = Registry::findRecordingById( id );
-    if ( ui->calendar->selectedDate() == rec.m_fileTime.date() )
-    { // add to view if we are looking at this day
+    if ( (*i)->id() == rec.m_deviceId && ui->calendar->selectedDate() == rec.m_fileTime.date() )
+    { // add to view if we are looking at this day and this camera
         ui->eventTable->insertRow( row );
         ui->eventTable->setItem( row, 0, new QTableWidgetItem( rec.m_fileTime.time().toString() ) );
         ui->eventTable->setItem( row, 1, new QTableWidgetItem( id ) );
@@ -74,12 +73,14 @@ void MainWindow::upnpDiscovery(QUpnpDiscovery disco)
     {
         if( ! cameras.contains( disco.m_deviceId )  )
         {
-            Logitech700eCamera *camera = new Logitech700eCamera( disco.m_deviceId, disco.m_destAddr );
+            Logitech700eCamera *camera = new Logitech700eCamera( disco.m_destAddr );
             connect(camera,SIGNAL(newRecording(QString)),this,SLOT(newRecording(QString)));
             cameras.insert( disco.m_deviceId, QSharedPointer<Camera>(camera) );
             ui->cameraList->insertItem(0, disco.m_deviceId );
             if ( 1 == ui->cameraList->count() )
+            {
                 ui->cameraList->setCurrentIndex( 0 );
+            }
         }
     }
 }
@@ -102,7 +103,9 @@ void MainWindow::on_cameraList_currentIndexChanged(const QString &arg1)
     if( cameras.end() != i )
     {
         while( ui->eventTable->rowCount() )
+        {
             ui->eventTable->removeRow( 0 );
+        }
 
         ui->eventTable->insertRow(0);
         ui->eventTable->setItem( 0, 0, new QTableWidgetItem( "LIVE" ) );
@@ -119,17 +122,20 @@ void MainWindow::on_calendar_selectionChanged()
     CameraRoster::iterator i = cameras.find( ui->cameraList->currentText() );
     if( cameras.end() != i )
     {
-        // Really? we have to delete teh rows one at a time?
+        // Really? we have to delete the rows one at a time?
         while( 1 < ui->eventTable->rowCount() )
             ui->eventTable->removeRow( 1 );
 
         QList<Recording> list = Registry::findRecordingsByDate( ui->calendar->selectedDate() );
         foreach(Recording rec, list)
         {
-            int row = ui->eventTable->rowCount();
-            ui->eventTable->insertRow( row );
-            ui->eventTable->setItem( row, 0, new QTableWidgetItem( rec.m_fileTime.time().toString() ) );
-            ui->eventTable->setItem( row, 1, new QTableWidgetItem( rec.m_recordingId ) );
+            if( (*i)->id() == rec.m_deviceId )
+            {
+                int row = ui->eventTable->rowCount();
+                ui->eventTable->insertRow( row );
+                ui->eventTable->setItem( row, 0, new QTableWidgetItem( rec.m_fileTime.time().toString() ) );
+                ui->eventTable->setItem( row, 1, new QTableWidgetItem( rec.m_recordingId ) );
+            }
         }
     }
 }
@@ -137,15 +143,18 @@ void MainWindow::on_calendar_selectionChanged()
 void MainWindow::on_eventTable_itemSelectionChanged()
 {
     int row = ui->eventTable->currentRow();
-    QString time = ui->eventTable->item(row,0)->text();
-    QString id   = ui->eventTable->item(row,1)->text();
-    if( "LIVE" == time )
+    if( 0 <= row)
     {
-        qDebug() << __LINE__ << "Playing" << id;
-        ui->videoWidget->play( id );
-    } else {
-        Recording rec = Registry::findRecordingById( id );
-        qDebug() << __LINE__  << "Playing" << rec.filePath();
-        ui->videoWidget->play( rec.filePath() );
+        QString time = ui->eventTable->item(row,0)->text();
+        QString id   = ui->eventTable->item(row,1)->text();
+        if( "LIVE" == time )
+        {
+            qDebug() << __LINE__ << "Playing" << id;
+            ui->videoWidget->play( id );
+        } else {
+            Recording rec = Registry::findRecordingById( id );
+            qDebug() << __LINE__  << "Playing" << rec.filePath();
+            ui->videoWidget->play( rec.filePath() );
+        }
     }
 }

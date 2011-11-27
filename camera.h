@@ -24,9 +24,9 @@ public:
         Audio          = 0x00000008
     };
 
-    Camera(QString id, QObject *parent = 0);
+    Camera(QObject *parent = 0);
     virtual ~Camera();
-    QString id() { return m_id; }
+    virtual QString id() = 0;
     virtual int features() = 0;
     virtual QUrl liveStream() = 0;
     virtual QString recordings() = 0;
@@ -37,8 +37,6 @@ public:
 signals:
     void newRecording();
     void recordingEnded();
-private:
-    QString m_id;
 };
 
 

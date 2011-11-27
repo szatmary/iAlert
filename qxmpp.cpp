@@ -216,7 +216,6 @@ void QXmpp::handleFTRequestError (const gloox::IQ &iq, const std::string &sid)
 
 void QXmpp::handleFTBytestream (gloox::Bytestream *bs)
 {
-    qDebug() << __FUNCTION__;
     QHash< QString,QSharedPointer<QXmppFileTransfer> >::iterator i = m_activeTransfers.find( bs->sid().c_str() );
     if ( i != m_activeTransfers.end() )
     {

@@ -8,8 +8,9 @@ class Logitech700eCamera : public Camera
 {
 Q_OBJECT
 public:
-    Logitech700eCamera(QString id, QHostAddress addr, QString username = "admin", QString password = "Logitech");
+    Logitech700eCamera(QHostAddress addr, QString username = "admin", QString password = "Logitech");
     ~Logitech700eCamera();
+    virtual QString id();
     virtual int features();
     QString recordings();
     QUrl liveStream();

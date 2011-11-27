@@ -15,8 +15,8 @@
 
 #include <utime.h>
 
-Logitech700eCamera::Logitech700eCamera(QString id, QHostAddress addr, QString username, QString password)
-: Camera(id)
+Logitech700eCamera::Logitech700eCamera(QHostAddress addr, QString username, QString password)
+: Camera()
 , m_addr(addr)
 {
     m_xmppClient = QSharedPointer<QXmpp>( new QXmpp(addr,5222,username,password) );
@@ -39,6 +39,11 @@ Logitech700eCamera::Logitech700eCamera(QString id, QHostAddress addr, QString us
 
 Logitech700eCamera::~Logitech700eCamera()
 {
+}
+
+QString Logitech700eCamera::id()
+{
+    return m_instanceId;
 }
 
 int Logitech700eCamera::features()
@@ -87,7 +92,7 @@ void Logitech700eCamera::xmppConnected()
 
     // command: urn:logitech-com:logitech-alert:nvr:device:alert:get (I don't know what this one is, something to do with email)
     // AvailableLiveMediaStreamsInfo: logitech-alert:device:media:stream
-    // Ptz: urn:logitech-com:logitech-alert:device:video:ptz (Pan Tilt Zoom)
+    // Ptz: urn:logitech-com:logitech-alert:device:v eo:ptz (Pan Tilt Zoom)
     // command: urn:logitech-com:logitech-alert:nvr:device:video:get
     // CaptureLiveImage: urn:logitech-com:logitech-alert:device:media:image
     // command: urn:logitech-com:logitech-alert:nvr:device:audio:get
