@@ -2,4 +2,7 @@
     <qresource prefix="/html">
         <file>About iAlert.html</file>
     </qresource>
+    <qresource prefix="/icons">
+        <file>icon.svg</file>
+    </qresource>
 </RCC>

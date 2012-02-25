@@ -1,0 +1,16 @@
+iAlert
+Linux and OS X software for logitech alert cameras
+
+Compiling on Ubuntu:
+# sudo apt-get install git-core qt-sdk libupnp-dev libgloox-dev gstreamer0.10-ffmpeg phonon-backend-gstreamer
+# qmake iAlert.pro && make
+
+Compiling on Kubuntu:
+# apt-get libphonon-dev libupnp-dev libgloox-dev gstreamer0.10-ffmpeg phonon-backend-gstreamer
+# qmake iAlert.pro && make
+
+Compiling on OS X:
+Download and install the qt sdk from http://qt.nokia.com/downloads/
+Download and install homebrew from http://mxcl.github.com/homebrew/
+# brew indtall libupnp gloox
+# qmake iAlert.pro && make

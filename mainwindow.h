@@ -31,19 +31,14 @@ public slots:
 private slots:
     void on_cameraRefresh_clicked();
     void on_cameraList_currentIndexChanged(const QString &arg1);
-
-//    void on_eventList_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
-
     void on_calendar_selectionChanged();
-
     void on_eventTable_itemSelectionChanged();
-
 private:
     void closeEvent(QCloseEvent *event);
-    QUpnp upnp;
-
+    QUpnp          upnp;
     Ui::MainWindow *ui;
-    CameraRoster    cameras;
+    QPixmap        snapshot;
+    CameraRoster   cameras;
 };
 
 #endif // MAINWINDOW_H

@@ -9,6 +9,7 @@ int main(int argc, char *argv[])
     a.setApplicationName("iAlert");
     Registry r;
     MainWindow w;
+    w.setWindowIcon( QIcon(":/icons/icon.svg") );
     w.show();
 
     return a.exec();

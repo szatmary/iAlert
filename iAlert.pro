@@ -4,15 +4,11 @@
 #
 #-------------------------------------------------
 
-#mac:
-#{
-#    QMAKE_MAC_SDK = /Developer/SDKs/MacOSX10.6.sdk
-#}
-
 QT       += core gui network phonon sql webkit
 
 TARGET = iAlert
 TEMPLATE = app
+ICON = icon.icns
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -23,8 +19,7 @@ SOURCES += main.cpp\
     videowidget.cpp \
     registry.cpp \
     httpserver.cpp \
-    storagedialog.cpp \
-    about.cpp
+    storagedialog.cpp
 
 HEADERS  += mainwindow.h \
     camera.h \
@@ -34,19 +29,17 @@ HEADERS  += mainwindow.h \
     videowidget.h \
     registry.h \
     httpserver.h \
-    storagedialog.h \
-    about.h
+    storagedialog.h
 
 FORMS    += mainwindow.ui \
-    storagedialog.ui \
-    about.ui
+    storagedialog.ui
 
 LIBS += -lupnp -lgloox
 
 OTHER_FILES += \
     TODO.txt \
     License.txt \
-    About iAlert.xhtml
+    README
 
 RESOURCES += \
     resources.qrc

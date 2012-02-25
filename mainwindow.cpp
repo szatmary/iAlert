@@ -4,6 +4,8 @@
 
 #include <QUuid>
 #include <QDebug>
+#include <QMessageBox>
+#include <QCloseEvent>
 #include <QHostAddress>
 
 #include "logitechcameras.h"
@@ -26,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(&upnp,SIGNAL(discovery(QUpnpDiscovery)),this,SLOT(upnpDiscovery(QUpnpDiscovery)));
     connect(&upnp,SIGNAL(discoveryTimeout()),this,SLOT(upnpDiscoveryTimeout()));
+    ui->videoWidget->play( ":/icons/icon.svg" );
     refreshCameraList();
 }
 
@@ -36,8 +39,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    Q_UNUSED(event);
-    qApp->quit();
+    if ( QMessageBox::Yes == QMessageBox::question (this, "Exit iAlert?", "Are you sure you wish to exit?", QMessageBox::Yes | QMessageBox::No,QMessageBox::No) )
+        event->accept();
+    else
+        event->ignore();
 }
 
 void MainWindow::newRecording(QString id)
@@ -110,7 +115,7 @@ void MainWindow::on_cameraList_currentIndexChanged(const QString &arg1)
         ui->eventTable->insertRow(0);
         ui->eventTable->setItem( 0, 0, new QTableWidgetItem( "LIVE" ) );
         ui->eventTable->setItem( 0, 1, new QTableWidgetItem( (*i)->liveStream().toString() ) );
-        ui->eventTable->setCurrentCell(0,0);
+//        ui->eventTable->setCurrentCell(0,0);
         on_calendar_selectionChanged();
     }
 }
