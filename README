@@ -12,5 +12,5 @@ Compiling on Kubuntu:
 Compiling on OS X:
 Download and install the qt sdk from http://qt.nokia.com/downloads/
 Download and install homebrew from http://mxcl.github.com/homebrew/
-# brew indtall libupnp gloox
+# brew install libupnp gloox
 # qmake iAlert.pro && make

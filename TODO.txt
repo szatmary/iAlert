@@ -1,4 +1,3 @@
-Get an Icon
 Remeber details about Upnp discovered cameras in database.
 reconnect to cameras if tcp session is dropped.
 Make Movies folder configurable
@@ -8,11 +7,10 @@ QHttpServer for iPhone/iPad/Android webpage for viewing live + recordings. Use H
 Modify GUI:
     - Main GUI is a tray icon with growl notifacations for events
     - Seperate window for Revewing recordings.
-    -- Review App that can play back ad high speed
+    -- Review App that can play back at high speed
     -- Timeline view
     -- Bookmark recordings (and never delete bookmarked recordings)
     - Seperate window for each Camera Live view (auto swicth between low and high res on window resize, swicth to low on high packet loss)
     -- Show all that automatically tiles
-    -- Audio Controll
     -- Optional auto Mute for non-front most camera window
 

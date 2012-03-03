@@ -17,9 +17,7 @@ SOURCES += main.cpp\
     qupnp.cpp \
     qxmpp.cpp \
     videowidget.cpp \
-    registry.cpp \
-    httpserver.cpp \
-    storagedialog.cpp
+    registry.cpp
 
 HEADERS  += mainwindow.h \
     camera.h \
@@ -27,12 +25,9 @@ HEADERS  += mainwindow.h \
     qupnp.h \
     qxmpp.h \
     videowidget.h \
-    registry.h \
-    httpserver.h \
-    storagedialog.h
+    registry.h
 
-FORMS    += mainwindow.ui \
-    storagedialog.ui
+FORMS    += mainwindow.ui
 
 LIBS += -lupnp -lgloox
 
