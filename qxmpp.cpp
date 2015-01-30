@@ -241,12 +241,12 @@ const std::string QXmpp::handleOOBRequestResult (const gloox::JID &from, const g
     return "";
 }
 
-void QXmpp::handleAdhocSupport (const gloox::JID &remote, bool support, int context = 0)
+void QXmpp::handleAdhocSupport (const gloox::JID &remote, bool support, int context)
 {
     qDebug() << __FUNCTION__;
 }
 
-void QXmpp::handleAdhocCommands (const gloox::JID &remote, const gloox::StringMap &commands, int context = 0)
+void QXmpp::handleAdhocCommands (const gloox::JID &remote, const gloox::StringMap &commands, int context)
 {
     for(gloox::StringMap::const_iterator i = commands.begin() ; i != commands.end() ; ++i )
     {
@@ -254,12 +254,12 @@ void QXmpp::handleAdhocCommands (const gloox::JID &remote, const gloox::StringMa
     }
 }
 
-void QXmpp::handleAdhocError (const gloox::JID &remote, const gloox::Error *error, int context = 0)
+void QXmpp::handleAdhocError (const gloox::JID &remote, const gloox::Error *error, int context)
 {
     qDebug() << __FUNCTION__;
 }
 
-void QXmpp::handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command, int context = 0)
+void QXmpp::handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command, int context)
 {
     QSharedPointer<gloox::Adhoc::Command> cmd( (gloox::Adhoc::Command*)command.clone() );
     emit commandResult( cmd );
@@ -306,12 +306,12 @@ void QXmpp::handleUnsubscriptionResult (const std::string &id, const gloox::JID 
     qDebug() << __FUNCTION__;
 }
 
-void QXmpp::handleSubscriptionOptions (const std::string &id, const gloox::JID &service, const gloox::JID &jid, const std::string &node, const gloox::DataForm *options, const gloox::Error *error)
+void QXmpp::handleSubscriptionOptions (const std::string &id, const gloox::JID &service, const gloox::JID &jid, const std::string &node, const gloox::DataForm *options, const std::string& sid, const gloox::Error *error)
 {
     qDebug() << __FUNCTION__;
 }
 
-void QXmpp::handleSubscriptionOptionsResult (const std::string &id, const gloox::JID &service, const gloox::JID &jid, const std::string &node, const gloox::Error *error)
+void QXmpp::handleSubscriptionOptionsResult (const std::string &id, const gloox::JID &service, const gloox::JID &jid, const std::string &node, const std::string& sid, const gloox::Error *error)
 {
     qDebug() << __FUNCTION__;
 }
