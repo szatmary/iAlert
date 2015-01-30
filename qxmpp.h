@@ -135,10 +135,10 @@ public:
     virtual const std::string handleOOBRequestResult (const gloox::JID &from, const gloox::JID &to, const std::string &sid);
 
     //gloox::AdhocHandler
-    virtual void handleAdhocSupport (const gloox::JID &remote, bool support);
-    virtual void handleAdhocCommands (const gloox::JID &remote, const gloox::StringMap &commands);
-    virtual void handleAdhocError (const gloox::JID &remote, const gloox::Error *error);
-    virtual void handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command);
+    virtual void handleAdhocSupport (const gloox::JID &remote, bool support, int context = 0);
+    virtual void handleAdhocCommands (const gloox::JID &remote, const gloox::StringMap &commands, int context = 0);
+    virtual void handleAdhocError (const gloox::JID &remote, const gloox::Error *error, int context = 0);
+    virtual void handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command, int context = 0);
 
     //gloox::MessageHandler
     virtual void handleMessage (const gloox::Message &msg, gloox::MessageSession *session=0);

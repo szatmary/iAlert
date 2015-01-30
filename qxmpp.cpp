@@ -241,12 +241,12 @@ const std::string QXmpp::handleOOBRequestResult (const gloox::JID &from, const g
     return "";
 }
 
-void QXmpp::handleAdhocSupport (const gloox::JID &remote, bool support)
+void QXmpp::handleAdhocSupport (const gloox::JID &remote, bool support, int context = 0)
 {
     qDebug() << __FUNCTION__;
 }
 
-void QXmpp::handleAdhocCommands (const gloox::JID &remote, const gloox::StringMap &commands)
+void QXmpp::handleAdhocCommands (const gloox::JID &remote, const gloox::StringMap &commands, int context = 0)
 {
     for(gloox::StringMap::const_iterator i = commands.begin() ; i != commands.end() ; ++i )
     {
@@ -254,12 +254,12 @@ void QXmpp::handleAdhocCommands (const gloox::JID &remote, const gloox::StringMa
     }
 }
 
-void QXmpp::handleAdhocError (const gloox::JID &remote, const gloox::Error *error)
+void QXmpp::handleAdhocError (const gloox::JID &remote, const gloox::Error *error, int context = 0)
 {
     qDebug() << __FUNCTION__;
 }
 
-void QXmpp::handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command)
+void QXmpp::handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command, int context = 0)
 {
     QSharedPointer<gloox::Adhoc::Command> cmd( (gloox::Adhoc::Command*)command.clone() );
     emit commandResult( cmd );
