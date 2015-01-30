@@ -135,10 +135,10 @@ public:
     virtual const std::string handleOOBRequestResult (const gloox::JID &from, const gloox::JID &to, const std::string &sid);
 
     //gloox::AdhocHandler
-    virtual void handleAdhocSupport (const gloox::JID &remote, bool support);
-    virtual void handleAdhocCommands (const gloox::JID &remote, const gloox::StringMap &commands);
-    virtual void handleAdhocError (const gloox::JID &remote, const gloox::Error *error);
-    virtual void handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command);
+    virtual void handleAdhocSupport (const gloox::JID &remote, bool support, int context = 0);
+    virtual void handleAdhocCommands (const gloox::JID &remote, const gloox::StringMap &commands, int context = 0);
+    virtual void handleAdhocError (const gloox::JID &remote, const gloox::Error *error, int context = 0);
+    virtual void handleAdhocExecutionResult (const gloox::JID &remote, const gloox::Adhoc::Command &command, int context = 0);
 
     //gloox::MessageHandler
     virtual void handleMessage (const gloox::Message &msg, gloox::MessageSession *session=0);
@@ -150,8 +150,8 @@ public:
     virtual void handleItemDeletion (const std::string &id, const gloox::JID &service, const std::string &node, const gloox::PubSub::ItemList &itemList, const gloox::Error *error=0);
     virtual void handleSubscriptionResult (const std::string &id, const gloox::JID &service, const std::string &node, const std::string &sid, const gloox::JID &jid, const gloox::PubSub::SubscriptionType subType, const gloox::Error *error=0);
     virtual void handleUnsubscriptionResult (const std::string &id, const gloox::JID &service, const gloox::Error *error=0);
-    virtual void handleSubscriptionOptions (const std::string &id, const gloox::JID &service, const gloox::JID &jid, const std::string &node, const gloox::DataForm *options, const gloox::Error *error=0);
-    virtual void handleSubscriptionOptionsResult (const std::string &id, const gloox::JID &service, const gloox::JID &jid, const std::string &node, const gloox::Error *error=0);
+    virtual void handleSubscriptionOptions (const std::string &id, const gloox::JID &service, const gloox::JID &jid, const std::string &node, const gloox::DataForm *options, const std::string& sid = NULL, const gloox::Error *error=0);
+    virtual void handleSubscriptionOptionsResult (const std::string &id, const gloox::JID &service, const gloox::JID &jid, const std::string &node, const std::string& sid = NULL, const gloox::Error *error=0);
     virtual void handleSubscribers (const std::string &id, const gloox::JID &service, const std::string &node, const gloox::PubSub::SubscriberList *list, const gloox::Error *error=0);
     virtual void handleSubscribersResult (const std::string &id, const gloox::JID &service, const std::string &node, const gloox::PubSub::SubscriberList *list, const gloox::Error *error=0);
     virtual void handleAffiliates (const std::string &id, const gloox::JID &service, const std::string &node, const gloox::PubSub::AffiliateList *list, const gloox::Error *error=0);
